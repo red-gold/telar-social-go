@@ -1,0 +1,3 @@
+environment:
+  base_route: "/comments"
+  write_debug: "true"

@@ -1,0 +1,3 @@
+environment:
+  base_route: "/posts"
+  write_debug: "true"

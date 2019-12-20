@@ -1,0 +1,14 @@
+environment:
+    ## OpenFaaS Cloud: Communtiry Cluster ##
+    gateway: "https://red-gold.o6s.io"
+    origin: "https://red-gold.o6s.io"
+    web_domain: "https://red-gold.o6s.io"
+    external_domain: "https://red-gold.o6s.io"
+    cookie_root_domain: ".o6s.io"
+  
+    ## Local environment ##
+    # gateway: "http://gateway.openfaas:8080"
+    # origin: "http://www.app.localhost:31112"
+    # web_domain: "http://www.app.localhost:31112"
+    # external_domain: "http://www.app.localhost:31112"
+    # cookie_root_domain: ".app.localhost"

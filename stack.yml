@@ -1,0 +1,341 @@
+functions:
+  circles:
+    lang: golang-middleware
+    handler: ./src/controllers/social/circles
+    image: qolzam/circles:v0.2
+    fprocess: ""
+    environment:
+      app_name: Telar Social
+      base_route: /circles
+      cookie_root_domain: .o6s.io
+      db_type: mongo
+      external_domain: https://red-gold.o6s.io
+      gateway: https://red-gold.o6s.io
+      header_cookie_name: he
+      mongo_database: test
+      mongo_host: mongodb+srv://%s:%s@cluster0-l6ojz.mongodb.net/%s?retryWrites=true&w=majority
+      mongo_pwd_path: /var/openfaas/secrets/mongo-pwd
+      mongo_user: telar_user
+      org_avatar: https://avatars3.githubusercontent.com/u/43268620
+      org_name: Red Gold
+      origin: https://red-gold.o6s.io
+      payload_cookie_name: pa
+      phone_auth_id_path: /var/openfaas/secrets/phone-auth-id
+      phone_auth_token_path: /var/openfaas/secrets/phone-auth-token
+      phone_source_number: "0123456"
+      private_key_path: /var/openfaas/secrets/key
+      public_key_path: /var/openfaas/secrets/key.pub
+      query_pretty_url: "true"
+      read_timeout: 10s
+      recaptcha_key_path: /var/openfaas/secrets/recaptcha-key
+      recaptcha_site_key: 6LfXPboUAAAAAIQmwp8HVll7n7ZUpwNW1JL5RcoW
+      ref_email: polling.social@gmail.com
+      ref_email_pass_path: /var/openfaas/secrets/ref-email-pass
+      signature_cookie_name: si
+      smtp_email: smtp.gmail.com
+      web_domain: https://red-gold.o6s.io
+      write_debug: "true"
+      write_timeout: 10s
+    secrets:
+    - secrets
+    skip_build: false
+    constraints: null
+    environment_file:
+    - config/app_config.yml
+    - config/circle_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+    limits: null
+    requests: null
+    readonly_root_filesystem: false
+    build_options: []
+    annotations:
+      linkerd.io/inject: disabled
+  comments:
+    lang: golang-middleware
+    handler: ./src/controllers/comments
+    image: qolzam/comments:v0.2
+    fprocess: ""
+    environment:
+      app_name: Telar Social
+      base_route: /comments
+      cookie_root_domain: .o6s.io
+      db_type: mongo
+      external_domain: https://red-gold.o6s.io
+      gateway: https://red-gold.o6s.io
+      header_cookie_name: he
+      mongo_database: test
+      mongo_host: mongodb+srv://%s:%s@cluster0-l6ojz.mongodb.net/%s?retryWrites=true&w=majority
+      mongo_pwd_path: /var/openfaas/secrets/mongo-pwd
+      mongo_user: telar_user
+      org_avatar: https://avatars3.githubusercontent.com/u/43268620
+      org_name: Red Gold
+      origin: https://red-gold.o6s.io
+      payload_cookie_name: pa
+      phone_auth_id_path: /var/openfaas/secrets/phone-auth-id
+      phone_auth_token_path: /var/openfaas/secrets/phone-auth-token
+      phone_source_number: "0123456"
+      private_key_path: /var/openfaas/secrets/key
+      public_key_path: /var/openfaas/secrets/key.pub
+      query_pretty_url: "true"
+      read_timeout: 10s
+      recaptcha_key_path: /var/openfaas/secrets/recaptcha-key
+      recaptcha_site_key: 6LfXPboUAAAAAIQmwp8HVll7n7ZUpwNW1JL5RcoW
+      ref_email: polling.social@gmail.com
+      ref_email_pass_path: /var/openfaas/secrets/ref-email-pass
+      signature_cookie_name: si
+      smtp_email: smtp.gmail.com
+      web_domain: https://red-gold.o6s.io
+      write_debug: "true"
+      write_timeout: 10s
+    secrets:
+    - secrets
+    skip_build: false
+    constraints: null
+    environment_file:
+    - config/app_config.yml
+    - config/comment_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+    limits: null
+    requests: null
+    readonly_root_filesystem: false
+    build_options: []
+    annotations:
+      linkerd.io/inject: disabled
+  media:
+    lang: golang-middleware
+    handler: ./src/controllers/gallery
+    image: qolzam/media:v0.2
+    fprocess: ""
+    environment:
+      app_name: Telar Social
+      base_route: /gallery
+      cookie_root_domain: .o6s.io
+      db_type: mongo
+      external_domain: https://red-gold.o6s.io
+      gateway: https://red-gold.o6s.io
+      header_cookie_name: he
+      mongo_database: test
+      mongo_host: mongodb+srv://%s:%s@cluster0-l6ojz.mongodb.net/%s?retryWrites=true&w=majority
+      mongo_pwd_path: /var/openfaas/secrets/mongo-pwd
+      mongo_user: telar_user
+      org_avatar: https://avatars3.githubusercontent.com/u/43268620
+      org_name: Red Gold
+      origin: https://red-gold.o6s.io
+      payload_cookie_name: pa
+      phone_auth_id_path: /var/openfaas/secrets/phone-auth-id
+      phone_auth_token_path: /var/openfaas/secrets/phone-auth-token
+      phone_source_number: "0123456"
+      private_key_path: /var/openfaas/secrets/key
+      public_key_path: /var/openfaas/secrets/key.pub
+      query_pretty_url: "true"
+      read_timeout: 10s
+      recaptcha_key_path: /var/openfaas/secrets/recaptcha-key
+      recaptcha_site_key: 6LfXPboUAAAAAIQmwp8HVll7n7ZUpwNW1JL5RcoW
+      ref_email: polling.social@gmail.com
+      ref_email_pass_path: /var/openfaas/secrets/ref-email-pass
+      signature_cookie_name: si
+      smtp_email: smtp.gmail.com
+      web_domain: https://red-gold.o6s.io
+      write_debug: "true"
+      write_timeout: 10s
+    secrets:
+    - secrets
+    skip_build: false
+    constraints: null
+    environment_file:
+    - config/app_config.yml
+    - config/media_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+    limits: null
+    requests: null
+    readonly_root_filesystem: false
+    build_options: []
+    annotations:
+      linkerd.io/inject: disabled
+  posts:
+    lang: golang-middleware
+    handler: ./src/controllers/posts
+    image: qolzam/posts:v0.2
+    fprocess: ""
+    environment:
+      app_name: Telar Social
+      base_route: /posts
+      cookie_root_domain: .o6s.io
+      db_type: mongo
+      external_domain: https://red-gold.o6s.io
+      gateway: https://red-gold.o6s.io
+      header_cookie_name: he
+      mongo_database: test
+      mongo_host: mongodb+srv://%s:%s@cluster0-l6ojz.mongodb.net/%s?retryWrites=true&w=majority
+      mongo_pwd_path: /var/openfaas/secrets/mongo-pwd
+      mongo_user: telar_user
+      org_avatar: https://avatars3.githubusercontent.com/u/43268620
+      org_name: Red Gold
+      origin: https://red-gold.o6s.io
+      payload_cookie_name: pa
+      phone_auth_id_path: /var/openfaas/secrets/phone-auth-id
+      phone_auth_token_path: /var/openfaas/secrets/phone-auth-token
+      phone_source_number: "0123456"
+      private_key_path: /var/openfaas/secrets/key
+      public_key_path: /var/openfaas/secrets/key.pub
+      query_pretty_url: "true"
+      read_timeout: 10s
+      recaptcha_key_path: /var/openfaas/secrets/recaptcha-key
+      recaptcha_site_key: 6LfXPboUAAAAAIQmwp8HVll7n7ZUpwNW1JL5RcoW
+      ref_email: polling.social@gmail.com
+      ref_email_pass_path: /var/openfaas/secrets/ref-email-pass
+      signature_cookie_name: si
+      smtp_email: smtp.gmail.com
+      web_domain: https://red-gold.o6s.io
+      write_debug: "true"
+      write_timeout: 10s
+    secrets:
+    - secrets
+    skip_build: false
+    constraints: null
+    environment_file:
+    - config/app_config.yml
+    - config/post_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+    limits: null
+    requests: null
+    readonly_root_filesystem: false
+    build_options: []
+    annotations:
+      linkerd.io/inject: disabled
+  user-rels:
+    lang: golang-middleware
+    handler: ./src/controllers/social/user-rels
+    image: qolzam/user-rels:v0.2
+    fprocess: ""
+    environment:
+      app_name: Telar Social
+      base_route: /user-rels
+      cookie_root_domain: .o6s.io
+      db_type: mongo
+      external_domain: https://red-gold.o6s.io
+      gateway: https://red-gold.o6s.io
+      header_cookie_name: he
+      mongo_database: test
+      mongo_host: mongodb+srv://%s:%s@cluster0-l6ojz.mongodb.net/%s?retryWrites=true&w=majority
+      mongo_pwd_path: /var/openfaas/secrets/mongo-pwd
+      mongo_user: telar_user
+      org_avatar: https://avatars3.githubusercontent.com/u/43268620
+      org_name: Red Gold
+      origin: https://red-gold.o6s.io
+      payload_cookie_name: pa
+      phone_auth_id_path: /var/openfaas/secrets/phone-auth-id
+      phone_auth_token_path: /var/openfaas/secrets/phone-auth-token
+      phone_source_number: "0123456"
+      private_key_path: /var/openfaas/secrets/key
+      public_key_path: /var/openfaas/secrets/key.pub
+      query_pretty_url: "true"
+      read_timeout: 10s
+      recaptcha_key_path: /var/openfaas/secrets/recaptcha-key
+      recaptcha_site_key: 6LfXPboUAAAAAIQmwp8HVll7n7ZUpwNW1JL5RcoW
+      ref_email: polling.social@gmail.com
+      ref_email_pass_path: /var/openfaas/secrets/ref-email-pass
+      signature_cookie_name: si
+      smtp_email: smtp.gmail.com
+      web_domain: https://red-gold.o6s.io
+      write_debug: "true"
+      write_timeout: 10s
+    secrets:
+    - secrets
+    skip_build: false
+    constraints: null
+    environment_file:
+    - config/app_config.yml
+    - config/user_rel_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+    limits: null
+    requests: null
+    readonly_root_filesystem: false
+    build_options: []
+    annotations:
+      linkerd.io/inject: disabled
+  votes:
+    lang: golang-middleware
+    handler: ./src/controllers/votes
+    image: qolzam/votes:v0.2
+    fprocess: ""
+    environment:
+      app_name: Telar Social
+      base_route: /votes
+      cookie_root_domain: .o6s.io
+      db_type: mongo
+      external_domain: https://red-gold.o6s.io
+      gateway: https://red-gold.o6s.io
+      header_cookie_name: he
+      mongo_database: test
+      mongo_host: mongodb+srv://%s:%s@cluster0-l6ojz.mongodb.net/%s?retryWrites=true&w=majority
+      mongo_pwd_path: /var/openfaas/secrets/mongo-pwd
+      mongo_user: telar_user
+      org_avatar: https://avatars3.githubusercontent.com/u/43268620
+      org_name: Red Gold
+      origin: https://red-gold.o6s.io
+      payload_cookie_name: pa
+      phone_auth_id_path: /var/openfaas/secrets/phone-auth-id
+      phone_auth_token_path: /var/openfaas/secrets/phone-auth-token
+      phone_source_number: "0123456"
+      private_key_path: /var/openfaas/secrets/key
+      public_key_path: /var/openfaas/secrets/key.pub
+      query_pretty_url: "true"
+      read_timeout: 10s
+      recaptcha_key_path: /var/openfaas/secrets/recaptcha-key
+      recaptcha_site_key: 6LfXPboUAAAAAIQmwp8HVll7n7ZUpwNW1JL5RcoW
+      ref_email: polling.social@gmail.com
+      ref_email_pass_path: /var/openfaas/secrets/ref-email-pass
+      signature_cookie_name: si
+      smtp_email: smtp.gmail.com
+      web_domain: https://red-gold.o6s.io
+      write_debug: "true"
+      write_timeout: 10s
+    secrets:
+    - secrets
+    skip_build: false
+    constraints: null
+    environment_file:
+    - config/app_config.yml
+    - config/vote_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+    limits: null
+    requests: null
+    readonly_root_filesystem: false
+    build_options: []
+    annotations:
+      linkerd.io/inject: disabled
+provider:
+  name: faas
+  gateway: http://127.0.0.1:8080
+  network: ""
