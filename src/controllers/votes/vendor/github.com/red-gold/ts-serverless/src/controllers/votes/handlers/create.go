@@ -90,6 +90,11 @@ func CreateVoteHandle(db interface{}) func(server.Request) (handler.Response, er
 				fmt.Println(messageError)
 			}
 
+			if post.OwnerUserId == req.UserID {
+				// Should not send notification if the owner of the vote is same as owner of post
+				return
+			}
+
 			URL := fmt.Sprintf("/%s/posts/%s", req.UserID, model.PostId)
 			notificationModel := &notificationsModels.CreateNotificationModel{
 				OwnerUserId:          req.UserID,

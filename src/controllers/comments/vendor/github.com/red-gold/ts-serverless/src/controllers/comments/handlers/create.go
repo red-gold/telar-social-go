@@ -106,12 +106,16 @@ func CreateCommentHandle(db interface{}) func(server.Request) (handler.Response,
 				fmt.Println(messageError)
 			}
 
+			if post.OwnerUserId == req.UserID {
+				// Should not send notification if the owner of the comment is same as owner of post
+				return
+			}
 			URL := fmt.Sprintf("/%s/posts/%s", req.UserID, model.PostId)
 			notificationModel := &notificationsModels.CreateNotificationModel{
 				OwnerUserId:          req.UserID,
 				OwnerDisplayName:     req.DisplayName,
 				OwnerAvatar:          req.Avatar,
-				Description:          fmt.Sprintf("%s commented on your posts.", req.DisplayName),
+				Description:          fmt.Sprintf("%s commented on your post.", req.DisplayName),
 				URL:                  URL,
 				NotifyRecieverUserId: post.OwnerUserId,
 				TargetId:             model.PostId,
