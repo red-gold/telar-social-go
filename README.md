@@ -1,5 +1,7 @@
 # Telar Social Serverless
 
+Telar Social Network is an open sorce social network written in Go and based serveless functions.
+
 > 🚧 ***IT IS UNDER ACTIVE DEVELOPMENT, current version is unstable and maybe change at any time until release of v1.0.0.*** 🚧
 <br>⚠️ ***DO NOT USE IN ANY PRODUCTION ENVIRONMENT!!!*** ⚠️
 
@@ -13,12 +15,10 @@
 - [x] Search User
 - [ ] Search Tag
 - [x] Setting
-- [ ] Notification
+- [x] Notification
 - [ ] Feedback
 - [ ] Admin User Managemnet
-- [ ] OAuth
-- [ ] Optimization and Performance
-- [ ] Unit test
+- [x] OAuth
 - [x] Like Posts
 - [x] Chat
 - [ ] Album
@@ -26,3 +26,7 @@
 - [x] Sharing Post
 - [x] Comments
 - [ ] Post Permission
+
+### TODO
+- [ ] Unit test
+- [ ] Optimization and Performance
