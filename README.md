@@ -1,6 +1,6 @@
 # Telar Social Serverless
 
-Telar Social Network is an open sorce social network written in Go and based serveless functions.
+Telar Social Network is an open source social network written in Go and based on serveless functions.
 
 > 🚧 ***IT IS UNDER ACTIVE DEVELOPMENT, current version is unstable and maybe change at any time until release of v1.0.0.*** 🚧
 <br>⚠️ ***DO NOT USE IN ANY PRODUCTION ENVIRONMENT!!!*** ⚠️
