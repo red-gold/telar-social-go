@@ -22,6 +22,7 @@ type Repository interface {
 	Find(collectionName string, filter interface{}, limit int64, skip int64, sort map[string]int) <-chan QueryResult
 	FindOne(collectionName string, filter interface{}) <-chan QuerySingleResult
 	Update(collectionName string, filter interface{}, data interface{}, opts ...*UpdateOptions) <-chan RepositoryResult
+	UpdateMany(collectionName string, filter interface{}, data interface{}, opts ...*UpdateOptions) <-chan RepositoryResult
 	BulkUpdateOne(collectionName string, bulkData []BulkUpdateOne) <-chan RepositoryResult
 	Delete(collectionName string, filter interface{}, justOne bool) <-chan RepositoryResult
 	CreateIndex(collectionName string, indexes map[string]interface{}) <-chan error

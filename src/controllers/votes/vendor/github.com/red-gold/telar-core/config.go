@@ -117,12 +117,6 @@ func loadConfigFromEnvironment() {
 		log.Printf("[INFO]: MongoDB host information loaded from env.")
 	}
 
-	mongodbUser, ok := os.LookupEnv("mongo_user")
-	if ok {
-		config.AppConfig.MongoUser = &mongodbUser
-		log.Printf("[INFO]: MongoDB user information loaded from env.")
-	}
-
 	mongodbPwdPath, ok := os.LookupEnv("mongo_pwd_path")
 	if ok {
 		config.AppConfig.MongoPwdPath = &mongodbPwdPath

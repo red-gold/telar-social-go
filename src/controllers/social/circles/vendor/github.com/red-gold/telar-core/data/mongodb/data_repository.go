@@ -278,6 +278,63 @@ func (m *DataRepositoryMongo) Update(collectionName string, filter interface{}, 
 	return result
 }
 
+// Update update many objects.
+func (m *DataRepositoryMongo) UpdateMany(collectionName string, filter interface{}, data interface{}, opts ...*d.UpdateOptions) <-chan d.RepositoryResult {
+	result := make(chan d.RepositoryResult)
+	go func() {
+
+		var (
+			err          error
+			collection   *mongo.Collection
+			ctx          context.Context
+			updateResult *mongo.UpdateResult
+		)
+		// Get Collection
+		collection, err = m.Client.GetCollection(collectionName)
+		if err != nil {
+			fmt.Printf("Get collection %s err (%s)! \n", collectionName, err.Error())
+			result <- d.RepositoryResult{Error: err}
+		}
+
+		// Get Context
+		ctx, err = m.Client.GetContext()
+		if err != nil {
+			fmt.Printf("Get context err (%s)! \n", err.Error())
+			result <- d.RepositoryResult{Error: err}
+		}
+
+		// Map options
+		updateOptions := &options.UpdateOptions{}
+		if opts != nil {
+			mergedOpts := d.MergeUpdateOptions(opts...)
+			if mergedOpts.Upsert != nil {
+				updateOptions.SetUpsert(*mergedOpts.Upsert)
+			}
+			if mergedOpts.BypassDocumentValidation != nil {
+				updateOptions.SetBypassDocumentValidation(*mergedOpts.BypassDocumentValidation)
+			}
+			arrayFilter := options.ArrayFilters{}
+			if mergedOpts.ArrayFilters != nil {
+				arrayFilter.Filters = mergedOpts.ArrayFilters.Filters
+			}
+			updateOptions.SetArrayFilters(arrayFilter)
+		}
+
+		// Execute update
+		updateResult, err = collection.UpdateMany(ctx, filter, data, updateOptions)
+		if err != nil {
+			fmt.Printf("Update error (%s)! \n", err.Error())
+			result <- d.RepositoryResult{Error: err}
+		}
+
+		// Returnt Result
+		result <- d.RepositoryResult{Result: updateResult.ModifiedCount}
+		close(result)
+	}()
+
+	return result
+}
+
 // UpdateMany bulk update one object.
 func (m *DataRepositoryMongo) BulkUpdateOne(collectionName string, bulkData []d.BulkUpdateOne) <-chan d.RepositoryResult {
 	result := make(chan d.RepositoryResult)

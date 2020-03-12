@@ -13,7 +13,6 @@ type (
 		Server              *string
 		Gateway             *string
 		MongoDBHost         *string
-		MongoUser           *string
 		MongoPwdPath        *string
 		Database            *string
 		PublicKeyPath       *string

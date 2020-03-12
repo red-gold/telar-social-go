@@ -28,8 +28,7 @@ func NewMongoClient(ctx context.Context) (MongoDatabase, error) {
 		log.Fatalf("unable to read path: %s, error: %s", *config.AppConfig.MongoPwdPath, readFileErr.Error())
 	}
 
-	url := fmt.Sprintf(*config.AppConfig.MongoDBHost, *config.AppConfig.MongoUser,
-		mongoPwd, *config.AppConfig.Database)
+	url := fmt.Sprintf(*config.AppConfig.MongoDBHost, mongoPwd)
 
 	fmt.Printf("Mongo URL: %s", url)
 	var err error
