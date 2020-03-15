@@ -11,10 +11,10 @@
 > 🚧 ***IT IS UNDER ACTIVE DEVELOPMENT, current version is unstable and maybe change at any time until release of v1.0.0.*** 🚧
 <br>⚠️ ***DO NOT USE IN ANY PRODUCTION ENVIRONMENT!!!*** ⚠️
 
-## Support with buying a coffee 
+## Support with buying a coffee ☕️☕️☕️
 Our top backers [Become a backer](https://www.patreon.com/qolzam)
 
-## Sponsors
+## Sponsors 🥉🥈🥇
 Our top sponsors [Become a sponsor](https://www.patreon.com/qolzam)
 
 #### Features Migrated:
