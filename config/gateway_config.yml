@@ -1,14 +1,8 @@
 environment:
-    ## OpenFaaS Cloud: Communtiry Cluster ##
-    gateway: "https://red-gold.o6s.io"
-    origin: "https://red-gold.o6s.io"
-    web_domain: "https://red-gold.o6s.io"
-    external_domain: "https://red-gold.o6s.io"
-    cookie_root_domain: ".o6s.io"
-  
-    ## Local environment ##
-    # gateway: "http://gateway.openfaas:8080"
-    # origin: "http://www.app.localhost:31112"
-    # web_domain: "http://www.app.localhost:31112"
-    # external_domain: "http://www.app.localhost:31112"
-    # cookie_root_domain: ".app.localhost"
+  cookie_root_domain: .o6s.io
+  external_domain: https://telarpress.o6s.io
+  external_redirect_domain: https://telarpress.o6s.io/auth
+  gateway: https://telarpress.o6s.io
+  origin: https://telarpress.o6s.io
+  web_domain: https://telarpress.o6s.io
+  websocket_server_url: https://red-gold-socket.herokuapp.com
