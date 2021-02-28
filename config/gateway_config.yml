@@ -1,8 +1,5 @@
 environment:
-  cookie_root_domain: .cloud.telar.dev
-  external_domain: https://telarpress.cloud.telar.dev
-  external_redirect_domain: https://telarpress.cloud.telar.dev/auth
-  gateway: https://telarpress.cloud.telar.dev
-  origin: https://telarpress.cloud.telar.dev
-  web_domain: https://telarpress.cloud.telar.dev
+  cookie_root_domain: .faas.example.com
+  gateway: http://faas.example.com:31112
+  origin: http://faas.example.com:31112
   websocket_server_url: https://red-gold-socket.herokuapp.com

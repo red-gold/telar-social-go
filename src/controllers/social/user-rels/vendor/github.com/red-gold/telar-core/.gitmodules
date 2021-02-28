@@ -1,3 +1,0 @@
-[submodule "src/web/ts-ui"]
-	path = src/web/ts-ui 
-	url = git://github.com/Qolzam/ts-ui.git

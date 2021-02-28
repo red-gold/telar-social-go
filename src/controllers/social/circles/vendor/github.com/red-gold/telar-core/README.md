@@ -1,2 +1,0 @@
-# telar-core
-# telar-core
