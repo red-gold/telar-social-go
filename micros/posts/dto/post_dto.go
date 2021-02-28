@@ -1,8 +1,8 @@
 package dto
 
 import (
+	uuid "github.com/gofrs/uuid"
 	"github.com/red-gold/ts-serverless/constants"
-	uuid "github.com/satori/go.uuid"
 )
 
 type Post struct {

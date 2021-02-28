@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"strings"
 
+	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
 	server "github.com/red-gold/telar-core/server"
 	utils "github.com/red-gold/telar-core/utils"
 	"github.com/red-gold/ts-serverless/constants"
 	models "github.com/red-gold/ts-serverless/micros/posts/models"
 	service "github.com/red-gold/ts-serverless/micros/posts/services"
-	uuid "github.com/satori/go.uuid"
 )
 
 // QueryPostHandle handle query on post

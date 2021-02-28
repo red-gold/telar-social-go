@@ -1,8 +1,8 @@
 package service
 
 import (
+	uuid "github.com/gofrs/uuid"
 	dto "github.com/red-gold/ts-serverless/micros/circles/dto"
-	uuid "github.com/satori/go.uuid"
 )
 
 type CircleService interface {

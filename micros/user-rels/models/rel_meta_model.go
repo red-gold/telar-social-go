@@ -1,6 +1,6 @@
 package models
 
-import uuid "github.com/satori/go.uuid"
+import uuid "github.com/gofrs/uuid"
 
 type RelMetaModel struct {
 	UserId   uuid.UUID `json:"userId"`

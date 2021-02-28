@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
 	server "github.com/red-gold/telar-core/server"
 	"github.com/red-gold/telar-core/utils"
@@ -12,7 +13,6 @@ import (
 	domain "github.com/red-gold/ts-serverless/micros/votes/dto"
 	models "github.com/red-gold/ts-serverless/micros/votes/models"
 	service "github.com/red-gold/ts-serverless/micros/votes/services"
-	uuid "github.com/satori/go.uuid"
 )
 
 type PostModelNotification struct {

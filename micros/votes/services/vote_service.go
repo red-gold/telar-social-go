@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	uuid "github.com/gofrs/uuid"
 	"github.com/red-gold/telar-core/config"
 	coreData "github.com/red-gold/telar-core/data"
 	repo "github.com/red-gold/telar-core/data"
@@ -10,7 +11,6 @@ import (
 	mongoRepo "github.com/red-gold/telar-core/data/mongodb"
 	"github.com/red-gold/telar-core/utils"
 	dto "github.com/red-gold/ts-serverless/micros/votes/dto"
-	uuid "github.com/satori/go.uuid"
 )
 
 // VoteService handlers with injected dependencies

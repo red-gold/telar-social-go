@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
 	server "github.com/red-gold/telar-core/server"
 	"github.com/red-gold/telar-core/utils"
@@ -12,7 +13,6 @@ import (
 	domain "github.com/red-gold/ts-serverless/micros/posts/dto"
 	models "github.com/red-gold/ts-serverless/micros/posts/models"
 	service "github.com/red-gold/ts-serverless/micros/posts/services"
-	uuid "github.com/satori/go.uuid"
 )
 
 // UpdatePostHandle handle create a new post

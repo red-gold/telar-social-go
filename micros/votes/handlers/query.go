@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"strconv"
 
+	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
 	server "github.com/red-gold/telar-core/server"
 	utils "github.com/red-gold/telar-core/utils"
 	models "github.com/red-gold/ts-serverless/micros/votes/models"
 	service "github.com/red-gold/ts-serverless/micros/votes/services"
-	uuid "github.com/satori/go.uuid"
 )
 
 // GetVotesByPostIdHandle handle query on vote

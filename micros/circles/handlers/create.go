@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
+	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
 	server "github.com/red-gold/telar-core/server"
 	"github.com/red-gold/telar-core/utils"
 	domain "github.com/red-gold/ts-serverless/micros/circles/dto"
 	models "github.com/red-gold/ts-serverless/micros/circles/models"
 	service "github.com/red-gold/ts-serverless/micros/circles/services"
-	uuid "github.com/satori/go.uuid"
 )
 
 const followingCircleName = "Following"

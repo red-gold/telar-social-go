@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
+	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
 	server "github.com/red-gold/telar-core/server"
 	"github.com/red-gold/telar-core/utils"
 	service "github.com/red-gold/ts-serverless/micros/votes/services"
-	uuid "github.com/satori/go.uuid"
 )
 
 // DeleteVoteHandle handle delete a Vote

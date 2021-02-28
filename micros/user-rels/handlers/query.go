@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"strconv"
 
+	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
 	server "github.com/red-gold/telar-core/server"
 	utils "github.com/red-gold/telar-core/utils"
 	service "github.com/red-gold/ts-serverless/micros/user-rels/services"
-	uuid "github.com/satori/go.uuid"
 )
 
 // QueryUserRelHandle handle query on userRel

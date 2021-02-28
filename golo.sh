@@ -13,7 +13,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo -e "$BGreen Working directory: $DIR\n"
 echo -e "$Black"
 
-handlers=($(find $DIR/src -maxdepth 5 -name '*go.mod'))
+handlers=($(find $DIR/micros -maxdepth 5 -name '*go.mod'))
 replace_line="//replace\nreplace github.com/red-gold/ts-serverless => $DIR"
 lik='replace github.com/Qolzam'
 current_file=""

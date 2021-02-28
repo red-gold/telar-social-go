@@ -1,6 +1,6 @@
 package dto
 
-import uuid "github.com/satori/go.uuid"
+import uuid "github.com/gofrs/uuid"
 
 type UserRel struct {
 	ObjectId    uuid.UUID   `json:"objectId" bson:"objectId"`

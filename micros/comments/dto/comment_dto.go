@@ -1,7 +1,7 @@
 package dto
 
 import (
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/gofrs/uuid"
 )
 
 type Comment struct {
