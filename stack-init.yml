@@ -1,107 +1,130 @@
-provider:
-  name: openfaas
-  gateway: http://127.0.0.1:8080
-
 functions:
-  posts:
-    lang: golang-middleware
-    handler: ./src/controllers/posts
-    image: qolzam/posts:v0.2
-    labels:
-      openfaas-cloud: "1"
-      role: ts-system
-      com.openfaas.scale.zero: false
-    environment_file:
-      - config/app_config.yml
-      - config/post_config.yml
-      - config/server_web_config.yml
-      - config/gateway_config.yml
-    annotations:
-      linkerd.io/inject: disabled
-    secrets:
-      - secrets
-  media:
-    lang: golang-middleware
-    handler: ./src/controllers/gallery
-    image: qolzam/media:v0.2
-    labels:
-      openfaas-cloud: "1"
-      role: ts-system
-      com.openfaas.scale.zero: false
-    environment_file:
-      - config/app_config.yml
-      - config/media_config.yml
-      - config/server_web_config.yml
-      - config/gateway_config.yml
-    annotations:
-      linkerd.io/inject: disabled
-    secrets:
-      - secrets
-  comments:
-    lang: golang-middleware
-    handler: ./src/controllers/comments
-    image: qolzam/comments:v0.2
-    labels:
-      openfaas-cloud: "1"
-      role: ts-system
-      com.openfaas.scale.zero: false
-    environment_file:
-      - config/app_config.yml
-      - config/comment_config.yml
-      - config/server_web_config.yml
-      - config/gateway_config.yml
-    annotations:
-      linkerd.io/inject: disabled
-    secrets:
-      - secrets
-  votes:
-    lang: golang-middleware
-    handler: ./src/controllers/votes
-    image: qolzam/votes:v0.2
-    labels:
-      openfaas-cloud: "1"
-      role: ts-system
-      com.openfaas.scale.zero: false
-    environment_file:
-      - config/app_config.yml
-      - config/vote_config.yml
-      - config/server_web_config.yml
-      - config/gateway_config.yml
-    annotations:
-      linkerd.io/inject: disabled
-    secrets:
-      - secrets
   circles:
     lang: golang-middleware
-    handler: ./src/controllers/social/circles
-    image: qolzam/circles:v0.2
+    handler: ./micros/circles
+    image: qolzam/circles:v0.202
+    fprocess: ""
+    environment: {}
+    secrets:
+    - secrets
+    environment_file:
+    - config/app_config.yml
+    - config/circle_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
     labels:
+      com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
       role: ts-system
-      com.openfaas.scale.zero: false
-    environment_file:
-      - config/app_config.yml
-      - config/circle_config.yml
-      - config/server_web_config.yml
-      - config/gateway_config.yml
+      telar.dev.appID: my-social-network
+      telar.dev.repo: ts-serverless
     annotations:
       linkerd.io/inject: disabled
+  comments:
+    lang: golang-middleware
+    handler: ./micros/comments
+    image: qolzam/comments:v0.202
+    fprocess: ""
+    environment: {}
     secrets:
-      - secrets
+    - secrets
+    environment_file:
+    - config/app_config.yml
+    - config/comment_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+      telar.dev.appID: my-social-network
+      telar.dev.repo: ts-serverless
+    annotations:
+      linkerd.io/inject: disabled
+  media:
+    lang: golang-middleware
+    handler: ./micros/gallery
+    image: qolzam/media:v0.202
+    fprocess: ""
+    environment: {}
+    secrets:
+    - secrets
+    environment_file:
+    - config/app_config.yml
+    - config/media_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+      telar.dev.appID: my-social-network
+      telar.dev.repo: ts-serverless
+    annotations:
+      linkerd.io/inject: disabled
+  posts:
+    lang: golang-middleware
+    handler: ./micros/posts
+    image: qolzam/posts:v0.202
+    fprocess: ""
+    environment: {}
+    secrets:
+    - secrets
+    environment_file:
+    - config/app_config.yml
+    - config/post_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+      telar.dev.appID: my-social-network
+      telar.dev.repo: ts-serverless
+    annotations:
+      linkerd.io/inject: disabled
   user-rels:
     lang: golang-middleware
-    handler: ./src/controllers/social/user-rels
-    image: qolzam/user-rels:v0.2
+    handler: ./micros/user-rels
+    image: qolzam/user-rels:v0.202
+    fprocess: ""
+    environment: {}
+    secrets:
+    - secrets
+    environment_file:
+    - config/app_config.yml
+    - config/user_rel_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
     labels:
+      com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
       role: ts-system
-      com.openfaas.scale.zero: false
-    environment_file:
-      - config/app_config.yml
-      - config/user_rel_config.yml
-      - config/server_web_config.yml
-      - config/gateway_config.yml
+      telar.dev.appID: my-social-network
+      telar.dev.repo: ts-serverless
     annotations:
       linkerd.io/inject: disabled
+  votes:
+    lang: golang-middleware
+    handler: ./micros/votes
+    image: qolzam/votes:v0.202
+    fprocess: ""
+    environment: {}
     secrets:
-      - secrets
+    - secrets
+    environment_file:
+    - config/app_config.yml
+    - config/vote_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+      telar.dev.appID: my-social-network
+      telar.dev.repo: ts-serverless
+    annotations:
+      linkerd.io/inject: disabled
+provider:
+  name: openfaas
+  gateway: http://192.168.1.18:31112
