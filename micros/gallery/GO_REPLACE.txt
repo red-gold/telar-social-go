@@ -1,0 +1,3 @@
+replace github.com/red-gold/ts-serverless/micros/gallery/handlers => ./function/handlers
+replace github.com/red-gold/ts-serverless/micros/gallery/config => ./function/config
+replace github.com/red-gold/ts-serverless/micros/gallery => ./function

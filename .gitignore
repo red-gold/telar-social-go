@@ -10,3 +10,7 @@ playground/storage/public/node_modules
 playground/storage/public/node_modules/*
 build/*
 template/*
+.DS_Store
+micros/.DS_Store
+*/.DS_Store
+config/env/.env.secrets

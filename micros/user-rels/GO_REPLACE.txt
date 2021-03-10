@@ -1,0 +1,3 @@
+replace github.com/red-gold/ts-serverless/micros/user-rels/handlers => ./function/handlers
+replace github.com/red-gold/ts-serverless/micros/user-rels/config => ./function/config
+replace github.com/red-gold/ts-serverless/micros/user-rels => ./function

@@ -1,0 +1,177 @@
+version: "3.8"
+services:
+  proxy:
+    image: traefik:v2.4.2
+    command:
+      # - "--log.level=DEBUG"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.insecure=true" # Don't do that in production
+      - "--providers.docker"
+      - "--entrypoints.web.address=:80"
+      # add pilot token service
+      # - "--pilot.token=3d1bd97f-cb9d-4cde-8112-77ce2f5abc92"
+      # install plugin rewrite body
+      # - "--experimental.plugins.plugin-rewrite.modulename=github.com/traefik/plugin-rewritebody"
+      # - "--experimental.plugins.plugin-rewrite.version=v0.3.1"
+    labels: {}
+      # Create basics middlewares
+      # - "traefik.http.middlewares.my-auth.basicauth.users=test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/"
+      # - "traefik.http.middlewares.my-compress.compress=true"
+      # - "traefik.http.middlewares.my-header.headers.customresponseheaders.X-Custom-Response-Header=cinema"
+      # Create middlewares for plugins
+      # - "traefik.http.middlewares.my-rewrite.plugin.plugin-rewrite.lastModified=true"
+      # - "traefik.http.middlewares.my-rewrite.plugin.plugin-rewrite.rewrites[0].regex=ID"
+      # - "traefik.http.middlewares.my-rewrite.plugin.plugin-rewrite.rewrites[0].replacement=MY-ID"
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+
+  circles:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        MICRONAME: circles
+    # image:qolzam/circles:v2.1.0
+    volumes:
+      - ../micros/circles:/usr/local/go/src/github.com/red-gold/ts-serverless/micros/circles
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    labels:
+      # Enable public access
+      - "traefik.http.routers.circles.rule=PathPrefix(`/circles/`)"
+      - "traefik.http.services.circles.loadbalancer.server.port=8080"
+      - "traefik.http.routers.circles.entrypoints=web"
+      - "traefik.http.routers.circles.middlewares=circles-stripprefix"
+      - "traefik.http.middlewares.circles-stripprefix.stripprefix.prefixes=/circles"
+    env_file:
+      - ../config/env/.env.app_config
+      - ../config/env/.env.secrets
+      - ../config/env/.env.gateway_config
+      - ../config/env/.env.circle_config
+
+  comments:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        MICRONAME: comments
+    # image:qolzam/comments:v2.1.0
+    volumes:
+      - ../micros/comments:/usr/local/go/src/github.com/red-gold/ts-serverless/micros/comments
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    labels:
+      # Enable public access
+      - "traefik.http.routers.comments.rule=PathPrefix(`/comments/`)"
+      - "traefik.http.services.comments.loadbalancer.server.port=8080"
+      - "traefik.http.routers.comments.entrypoints=web"
+      - "traefik.http.routers.comments.middlewares=comments-stripprefix"
+      - "traefik.http.middlewares.comments-stripprefix.stripprefix.prefixes=/comments"
+    env_file:
+      - ../config/env/.env.app_config
+      - ../config/env/.env.secrets
+      - ../config/env/.env.gateway_config
+      - ../config/env/.env.comment_config
+
+  gallery:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        MICRONAME: gallery
+    # image:qolzam/gallery:v2.1.0
+    volumes:
+      - ../micros/gallery:/usr/local/go/src/github.com/red-gold/ts-serverless/micros/gallery
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    labels:
+      # Enable public access
+      - "traefik.http.routers.gallery.rule=PathPrefix(`/gallery/`)"
+      - "traefik.http.services.gallery.loadbalancer.server.port=8080"
+      - "traefik.http.routers.gallery.entrypoints=web"
+      - "traefik.http.routers.gallery.middlewares=gallery-stripprefix"
+      - "traefik.http.middlewares.gallery-stripprefix.stripprefix.prefixes=/gallery"
+    env_file:
+      - ../config/env/.env.app_config
+      - ../config/env/.env.secrets
+      - ../config/env/.env.gateway_config
+      - ../config/env/.env.media_config
+
+  posts:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        MICRONAME: posts
+    # image:qolzam/posts:v2.1.0
+    volumes:
+      - ../micros/posts:/usr/local/go/src/github.com/red-gold/ts-serverless/micros/posts
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    labels:
+      # Enable public access
+      - "traefik.http.routers.posts.rule=PathPrefix(`/posts/`)"
+      - "traefik.http.services.posts.loadbalancer.server.port=8080"
+      - "traefik.http.routers.posts.entrypoints=web"
+      - "traefik.http.routers.posts.middlewares=posts-stripprefix"
+      - "traefik.http.middlewares.posts-stripprefix.stripprefix.prefixes=/posts"
+    env_file:
+      - ../config/env/.env.app_config
+      - ../config/env/.env.secrets
+      - ../config/env/.env.gateway_config
+      - ../config/env/.env.post_config
+
+  user-rels:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        MICRONAME: user-rels
+    # image:qolzam/user-rels:v2.1.0
+    volumes:
+      - ../micros/user-rels:/usr/local/go/src/github.com/red-gold/ts-serverless/micros/user-rels
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    labels:
+      # Enable public access
+      - "traefik.http.routers.user-rels.rule=PathPrefix(`/user-rels/`)"
+      - "traefik.http.services.user-rels.loadbalancer.server.port=8080"
+      - "traefik.http.routers.user-rels.entrypoints=web"
+      - "traefik.http.routers.user-rels.middlewares=user-rels-stripprefix"
+      - "traefik.http.middlewares.user-rels-stripprefix.stripprefix.prefixes=/user-rels"
+    env_file:
+      - ../config/env/.env.app_config
+      - ../config/env/.env.secrets
+      - ../config/env/.env.gateway_config
+      - ../config/env/.env.user_rel_config
+
+  votes:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        MICRONAME: votes
+    # image:qolzam/votes:v2.1.0
+    volumes:
+      - ../micros/votes:/usr/local/go/src/github.com/red-gold/ts-serverless/micros/votes
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    labels:
+      # Enable public access
+      - "traefik.http.routers.votes.rule=PathPrefix(`/votes/`)"
+      - "traefik.http.services.votes.loadbalancer.server.port=8080"
+      - "traefik.http.routers.votes.entrypoints=web"
+      - "traefik.http.routers.votes.middlewares=votes-stripprefix"
+      - "traefik.http.middlewares.votes-stripprefix.stripprefix.prefixes=/votes"
+    env_file:
+      - ../config/env/.env.app_config
+      - ../config/env/.env.secrets
+      - ../config/env/.env.gateway_config
+      - ../config/env/.env.vote_config
