@@ -101,6 +101,12 @@ func getAllConfiguration() *config.Configuration {
 		log.Printf("[INFO]: Gateway information loaded from env.")
 	}
 
+	internalGateway, ok := os.LookupEnv("internal_gateway")
+	if ok {
+		config.AppConfig.InternalGateway = &internalGateway
+		log.Printf("[INFO]: Internal gateway information loaded from env. | %s |", internalGateway)
+	}
+
 	webDomain, ok := os.LookupEnv("web_domain")
 	if ok {
 		newCoreConfig.WebDomain = &webDomain
