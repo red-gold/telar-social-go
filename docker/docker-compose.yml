@@ -50,7 +50,7 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     labels:
       # Enable public access
-      - "traefik.http.routers.circles.rule=PathPrefix(`/circles/`)"
+      - "traefik.http.routers.circles.rule=PathPrefix(`/circles`)"
       - "traefik.http.services.circles.loadbalancer.server.port=8080"
       - "traefik.http.routers.circles.entrypoints=web"
       - "traefik.http.routers.circles.middlewares=circles-stripprefix"
@@ -73,7 +73,7 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     labels:
       # Enable public access
-      - "traefik.http.routers.comments.rule=PathPrefix(`/comments/`)"
+      - "traefik.http.routers.comments.rule=PathPrefix(`/comments`)"
       - "traefik.http.services.comments.loadbalancer.server.port=8080"
       - "traefik.http.routers.comments.entrypoints=web"
       - "traefik.http.routers.comments.middlewares=comments-stripprefix"
@@ -96,11 +96,11 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     labels:
       # Enable public access
-      - "traefik.http.routers.gallery.rule=PathPrefix(`/gallery/`)"
-      - "traefik.http.services.gallery.loadbalancer.server.port=8080"
-      - "traefik.http.routers.gallery.entrypoints=web"
-      - "traefik.http.routers.gallery.middlewares=gallery-stripprefix"
-      - "traefik.http.middlewares.gallery-stripprefix.stripprefix.prefixes=/gallery"
+      - "traefik.http.routers.media.rule=PathPrefix(`/media`)"
+      - "traefik.http.services.media.loadbalancer.server.port=8080"
+      - "traefik.http.routers.media.entrypoints=web"
+      - "traefik.http.routers.media.middlewares=media-stripprefix"
+      - "traefik.http.middlewares.media-stripprefix.stripprefix.prefixes=/media"
     env_file:
       - ../config/env/.env.app_config
       - ../config/env/.env.secrets
@@ -119,7 +119,7 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     labels:
       # Enable public access
-      - "traefik.http.routers.posts.rule=PathPrefix(`/posts/`)"
+      - "traefik.http.routers.posts.rule=PathPrefix(`/posts`)"
       - "traefik.http.services.posts.loadbalancer.server.port=8080"
       - "traefik.http.routers.posts.entrypoints=web"
       - "traefik.http.routers.posts.middlewares=posts-stripprefix"
@@ -142,7 +142,7 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     labels:
       # Enable public access
-      - "traefik.http.routers.user-rels.rule=PathPrefix(`/user-rels/`)"
+      - "traefik.http.routers.user-rels.rule=PathPrefix(`/user-rels`)"
       - "traefik.http.services.user-rels.loadbalancer.server.port=8080"
       - "traefik.http.routers.user-rels.entrypoints=web"
       - "traefik.http.routers.user-rels.middlewares=user-rels-stripprefix"
@@ -165,7 +165,7 @@ services:
       - $GOPATH/pkg/mod:/go/pkg/mod
     labels:
       # Enable public access
-      - "traefik.http.routers.votes.rule=PathPrefix(`/votes/`)"
+      - "traefik.http.routers.votes.rule=PathPrefix(`/votes`)"
       - "traefik.http.services.votes.loadbalancer.server.port=8080"
       - "traefik.http.routers.votes.entrypoints=web"
       - "traefik.http.routers.votes.middlewares=votes-stripprefix"
