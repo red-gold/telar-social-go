@@ -103,7 +103,7 @@ func getAllConfiguration() *config.Configuration {
 
 	internalGateway, ok := os.LookupEnv("internal_gateway")
 	if ok {
-		config.AppConfig.InternalGateway = &internalGateway
+		newCoreConfig.InternalGateway = &internalGateway
 		log.Printf("[INFO]: Internal gateway information loaded from env. | %s |", internalGateway)
 	}
 

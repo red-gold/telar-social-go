@@ -1,5 +1,6 @@
 environment:
   cookie_root_domain: .faas.example.com
   gateway: http://faas.example.com:31112
+  internal_gateway: http://faas.example.com:31112
   origin: http://faas.example.com:31112
   websocket_server_url: https://red-gold-socket.herokuapp.com
