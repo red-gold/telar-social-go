@@ -95,6 +95,17 @@ func getAllConfiguration() *config.Configuration {
 		newCoreConfig.QueryPrettyURL = &parsedQueryPrettyURL
 		log.Printf("[INFO]: Query Pretty URL information loaded from env.")
 	}
+
+	debug, ok := os.LookupEnv("debug")
+	if ok {
+		parsedDebug, errParseDebug := strconv.ParseBool(debug)
+		if errParseDebug != nil {
+			log.Printf("[ERROR]: Debug information loading error: %s", errParseDebug.Error())
+		}
+		newCoreConfig.Debug = &parsedDebug
+		log.Printf("[INFO]: Debug information loaded from env.")
+	}
+
 	gateway, ok := os.LookupEnv("gateway")
 	if ok {
 		newCoreConfig.Gateway = &gateway
