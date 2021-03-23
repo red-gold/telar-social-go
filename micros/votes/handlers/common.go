@@ -23,13 +23,7 @@ func functionCall(method string, bytesReq []byte, url string, header map[string]
 		return nil, httpErr
 	}
 
-	payloadSecret, psErr := utils.ReadSecret("payload-secret")
-
-	if psErr != nil {
-		return nil, fmt.Errorf("couldn't get payload-secret: %s", psErr.Error())
-	}
-
-	digest := hmac.Sign(bytesReq, []byte(payloadSecret))
+	digest := hmac.Sign(bytesReq, []byte(*coreConfig.AppConfig.PayloadSecret))
 	httpReq.Header.Set("Content-type", "application/json")
 	fmt.Printf("\ndigest: %s, header: %v \n", "sha1="+hex.EncodeToString(digest), server.X_Cloud_Signature)
 	httpReq.Header.Add(server.X_Cloud_Signature, "sha1="+hex.EncodeToString(digest))

@@ -175,3 +175,26 @@ services:
       - ../config/env/.env.secrets
       - ../config/env/.env.gateway_config
       - ../config/env/.env.vote_config
+
+  vang:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile
+      args:
+        MICRONAME: vang
+    # image:qolzam/vang:v2.1.0
+    volumes:
+      - ../micros/vang:/usr/local/go/src/github.com/red-gold/ts-serverless/micros/vang
+      - $GOPATH/pkg/mod:/go/pkg/mod
+    labels:
+      # Enable public access
+      - "traefik.http.routers.vang.rule=PathPrefix(`/vang`)"
+      - "traefik.http.services.vang.loadbalancer.server.port=8080"
+      - "traefik.http.routers.vang.entrypoints=web"
+      - "traefik.http.routers.vang.middlewares=vang-stripprefix"
+      - "traefik.http.middlewares.vang-stripprefix.stripprefix.prefixes=/vang"
+    env_file:
+      - ../config/env/.env.app_config
+      - ../config/env/.env.secrets
+      - ../config/env/.env.gateway_config
+      - ../config/env/.env.vang_config

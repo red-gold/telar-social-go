@@ -125,6 +125,27 @@ functions:
       telar.dev.repo: ts-serverless
     annotations:
       linkerd.io/inject: disabled
+  vang:
+    lang: golang-middleware
+    handler: ./micros/vang
+    image: qolzam/vang:v0.202
+    fprocess: ""
+    environment: {}
+    secrets:
+    - secrets
+    environment_file:
+    - config/app_config.yml
+    - config/vang_config.yml
+    - config/server_web_config.yml
+    - config/gateway_config.yml
+    labels:
+      com.openfaas.scale.zero: "false"
+      openfaas-cloud: "1"
+      role: ts-system
+      telar.dev.appID: my-social-network
+      telar.dev.repo: ts-serverless
+    annotations:
+      linkerd.io/inject: disabled
 provider:
   name: openfaas
   gateway: http://192.168.1.18:31112

@@ -24,11 +24,13 @@ RUN  sed -i "s|__micro_name|$MICRONAME|g" main.go
 RUN go mod tidy
 
 COPY micros/$MICRONAME function
+COPY docker/micro/GO_REPLACE.txt .
 COPY docker/micro/go.mod function/go.mod
 RUN  sed -i "s|__micro_name|$MICRONAME|g" function/go.mod
 
 # Add user overrides to the root go.mod, which is the only place "replace" can be used
 RUN cat function/GO_REPLACE.txt >> ./go.mod || exit 0
+RUN cat ./GO_REPLACE.txt >> function/go.mod || exit 0
 
 # Run a gofmt and exclude all vendored code.
 RUN test -z "$(gofmt -l $(find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./function/vendor/*"))" || { echo "Run \"gofmt -s -w\" on your Golang code"; exit 1; }

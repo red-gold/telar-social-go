@@ -6,6 +6,7 @@ import (
 
 	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
+	"github.com/red-gold/telar-core/pkg/log"
 	server "github.com/red-gold/telar-core/server"
 	"github.com/red-gold/telar-core/utils"
 	service "github.com/red-gold/ts-serverless/micros/comments/services"
@@ -58,12 +59,13 @@ func DeleteCommentHandle(db interface{}) func(server.Request) (handler.Response,
 		userHeaders["role"] = []string{req.SystemRole}
 
 		postIndexURL := fmt.Sprintf("/posts/comment/-1/%s", postId)
-		_, postIndexErr := functionCall(http.MethodPut, []byte(""), postIndexURL, userHeaders)
+		_, commentDecreaseRes := functionCall(http.MethodPut, []byte(""), postIndexURL, userHeaders)
 
-		if postIndexErr != nil {
+		if commentDecreaseRes != nil {
+			log.Error("Cannot save vote on post! error: %s", commentDecreaseRes.Error())
 			return handler.Response{StatusCode: http.StatusInternalServerError,
 					Body: utils.MarshalError("decreasePostCommentCountError",
-						fmt.Sprintf("Cannot save vote on post! error: %s", postIndexErr.Error()))},
+						fmt.Sprintf("Cannot save vote on post!"))},
 				nil
 		}
 		return handler.Response{

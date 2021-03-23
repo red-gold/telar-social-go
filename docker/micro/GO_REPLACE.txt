@@ -1,0 +1,1 @@
+replace github.com/red-gold/telar-core => github.com/red-gold/telar-core v0.1.8
