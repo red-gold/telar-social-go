@@ -48,6 +48,8 @@ github.com/red-gold/ts-serverless v0.1.18 h1:aLzFvY2XPioV0th08j05jzv55lxE+X0CBJv
 github.com/red-gold/ts-serverless v0.1.18/go.mod h1:ujqXKAmJLUQRoVyK5m5a0xsZcv1gqSbKt4kS/M+8XNs=
 github.com/red-gold/ts-serverless v0.1.21 h1:9ipKBC+zHbLV36/ZdzVUMbNYZMwbG+n3c3LJXwWi/no=
 github.com/red-gold/ts-serverless v0.1.21/go.mod h1:ujqXKAmJLUQRoVyK5m5a0xsZcv1gqSbKt4kS/M+8XNs=
+github.com/red-gold/ts-serverless v0.1.22 h1:Wjmr0HpjDrF87u0ncABYPOSz2yoXRg30CPifY1HNj78=
+github.com/red-gold/ts-serverless v0.1.22/go.mod h1:oFb8YP4qs6iO4A93Y2D1xu5LCFiABqESzZkCAOW2Zok=
 github.com/rs/cors v1.7.0 h1:+88SsELBHx5r+hZ8TCkggzSstaWNbDvThkVK8H6f9ik=
 github.com/rs/cors v1.7.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
 github.com/sirupsen/logrus v1.8.0 h1:nfhvjKcUMhBMVqbKHJlk5RPrrfYr/NMo3692g0dwfWU=
