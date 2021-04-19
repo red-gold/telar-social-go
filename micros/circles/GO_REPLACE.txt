@@ -1,3 +1,0 @@
-replace github.com/red-gold/ts-serverless/micros/circles/handlers => ./function/handlers
-replace github.com/red-gold/ts-serverless/micros/circles/config => ./function/config
-replace github.com/red-gold/ts-serverless/micros/circles => ./function

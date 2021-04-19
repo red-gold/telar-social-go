@@ -1,1 +1,2 @@
 replace github.com/red-gold/telar-core => github.com/red-gold/telar-core v0.1.8
+replace github.com/red-gold/ts-serverless => github.com/red-gold/ts-serverless v0.1.21

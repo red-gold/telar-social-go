@@ -39,9 +39,13 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	if server == nil {
 		server = coreServer.NewServerRouter()
 		server.POST("/messages", handlers.SaveMessages(db), coreServer.RouteProtectionCookie)
+		server.POST("/message/query", handlers.QueryMessagesHandle(db), coreServer.RouteProtectionCookie)
 		server.PUT("/message", handlers.UpdateMessageHandle(db), coreServer.RouteProtectionCookie)
 		server.DELETE("/message/:messageId", handlers.DeleteMessageHandle(db), coreServer.RouteProtectionCookie)
 		server.POST("/room/active", handlers.ActivePeerRoom(db), coreServer.RouteProtectionCookie)
+
+		server.POST("/rooms", handlers.GetUserRooms(db), coreServer.RouteProtectionHMAC)
+		server.PUT("/read", handlers.UpdateReadMessageHandle(db), coreServer.RouteProtectionHMAC)
 	}
 	server.ServeHTTP(w, r)
 }

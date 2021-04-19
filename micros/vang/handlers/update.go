@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	handler "github.com/openfaas-incubator/go-function-sdk"
+	"github.com/red-gold/telar-core/pkg/log"
 	server "github.com/red-gold/telar-core/server"
 	"github.com/red-gold/telar-core/utils"
 	domain "github.com/red-gold/ts-serverless/micros/vang/dto"
@@ -42,6 +43,36 @@ func UpdateMessageHandle(db interface{}) func(server.Request) (handler.Response,
 		if err := messageService.UpdateMessageById(updatedMessage); err != nil {
 			errorMessage := fmt.Sprintf("Update Message Error %s", err.Error())
 			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("updateMessageError", errorMessage)}, nil
+		}
+		return handler.Response{
+			Body:       []byte(`{"success": true}`),
+			StatusCode: http.StatusOK,
+		}, nil
+	}
+}
+
+// UpdateMessageHandle handle create a new vang
+func UpdateReadMessageHandle(db interface{}) func(server.Request) (handler.Response, error) {
+
+	return func(req server.Request) (handler.Response, error) {
+
+		// Create the model object
+		var model models.UpdateReadMessageModel
+		if err := json.Unmarshal(req.Body, &model); err != nil {
+			log.Error("Unmarshal model models.UpdateReadMessageModel %s", err.Error())
+			return handler.Response{StatusCode: http.StatusInternalServerError}, err
+		}
+
+		// Create service
+		roomService, serviceErr := service.NewRoomService(db)
+		if serviceErr != nil {
+			log.Error("Room service %s", serviceErr.Error())
+			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
+		}
+
+		if err := roomService.UpdateMemberRead(model.RoomId, req.UserID, model.Amount, model.MessageCreatedDate); err != nil {
+			errorMessage := fmt.Sprintf("Update Message Error %s", err.Error())
+			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("updateMemberReadError", errorMessage)}, nil
 		}
 		return handler.Response{
 			Body:       []byte(`{"success": true}`),

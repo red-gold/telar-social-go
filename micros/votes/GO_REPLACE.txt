@@ -1,3 +1,5 @@
-replace github.com/red-gold/ts-serverless/micros/votes/handlers => ./function/handlers
-replace github.com/red-gold/ts-serverless/micros/votes/config => ./function/config
-replace github.com/red-gold/ts-serverless/micros/votes => ./function
+// Copyright (c) 2021 Amirhossein Movahedi (@qolzam)
+// 
+// This software is released under the MIT License.
+// https://opensource.org/licenses/MIT
+

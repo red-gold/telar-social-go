@@ -19,6 +19,6 @@ type MessageService interface {
 	DeleteMessageByOwner(ownerUserId uuid.UUID, vangId uuid.UUID) error
 	DeleteManyMessage(filter interface{}) error
 	CreateMessageIndex(indexes map[string]interface{}) error
-	GetMessageByRoomId(roomId *uuid.UUID, sortBy string, page int64, lteDate int64) ([]dto.Message, error)
+	GetMessageByRoomId(roomId *uuid.UUID, sortBy string, page int64, lteDate int64, gteDate int64) ([]dto.Message, error)
 	DeleteMessageByRoomId(ownerUserId uuid.UUID, roomId uuid.UUID) error
 }

@@ -21,4 +21,7 @@ type RoomService interface {
 	GetRoomByRoomId(roomId *uuid.UUID, sortBy string, page int64) ([]dto.Room, error)
 	DeleteRoomByRoomId(ownerUserId uuid.UUID, roomId uuid.UUID) error
 	FindOneRoomByMembers(userIds []string, roomType int8) (*dto.Room, error)
+	GetRoomsByUserId(userId string, roomType int8) ([]dto.Room, error)
+	UpdateMessageMeta(roomId uuid.UUID, amount, createdDate int64, text, ownerId string) error
+	UpdateMemberRead(roomId uuid.UUID, userId uuid.UUID, amount, messageCreatedDate int64) error
 }

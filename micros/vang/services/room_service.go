@@ -228,11 +228,84 @@ func (s RoomServiceImpl) DeleteRoomByRoomId(ownerUserId uuid.UUID, roomId uuid.U
 func (s RoomServiceImpl) FindOneRoomByMembers(userIds []string, roomType int8) (*dto.Room, error) {
 
 	include := make(map[string]interface{})
-	include["$in"] = userIds
+	include["$all"] = userIds
 
 	filter := make(map[string]interface{})
 	filter["members"] = include
 	filter["type"] = roomType
 
 	return s.FindOneRoom(filter)
+}
+
+// GetRoomsByUserId Get rooms by user ID
+func (s RoomServiceImpl) GetRoomsByUserId(userId string, roomType int8) ([]dto.Room, error) {
+	sortMap := make(map[string]int)
+	sortMap["updatedDate"] = -1
+	include := make(map[string]interface{})
+	include["$in"] = []string{userId}
+
+	filter := make(map[string]interface{})
+	filter["members"] = include
+	filter["type"] = roomType
+
+	return s.FindRoomList(filter, 0, 0, sortMap)
+}
+
+// IncreaseMemberCount Increase member count
+func (s RoomServiceImpl) IncreaseMemberCount(roomId uuid.UUID, amount int64) error {
+
+	increase := make(map[string]interface{})
+	increase["memberCount"] = amount
+
+	data := make(map[string]interface{})
+	increase["$inc"] = increase
+
+	filter := make(map[string]interface{})
+	filter["objectId"] = roomId
+
+	return s.UpdateRoom(filter, data)
+}
+
+// UpdateMessageMeta Update message meta
+func (s RoomServiceImpl) UpdateMessageMeta(roomId uuid.UUID, amount, createdDate int64, text, ownerId string) error {
+
+	increase := make(map[string]interface{})
+	increase["messageCount"] = amount
+
+	data := make(map[string]interface{})
+	data["$inc"] = increase
+
+	setData := make(map[string]interface{})
+	lastMessage := make(map[string]interface{})
+	lastMessage["text"] = text
+	lastMessage["ownerId"] = ownerId
+	lastMessage["createdDate"] = createdDate
+	setData["lastMessage"] = lastMessage
+	data["$set"] = setData
+
+	filter := make(map[string]interface{})
+	filter["objectId"] = roomId
+
+	options := &coreData.UpdateOptions{}
+	options.SetUpsert(true)
+	return s.UpdateRoom(filter, data, options)
+}
+
+// UpdateMemberRead Increase member read count and read member date to now
+func (s RoomServiceImpl) UpdateMemberRead(roomId uuid.UUID, userId uuid.UUID, amount, messageCreatedDate int64) error {
+
+	readCountField := fmt.Sprintf("readCount.%s", userId.String())
+	readDateField := fmt.Sprintf("readDate.%s", userId.String())
+
+	setData := make(map[string]interface{})
+	data := make(map[string]interface{})
+	setData[readDateField] = messageCreatedDate
+	setData[readCountField] = amount
+	data["$set"] = setData
+	filter := make(map[string]interface{})
+	filter["objectId"] = roomId
+
+	options := &coreData.UpdateOptions{}
+	options.SetUpsert(true)
+	return s.UpdateRoom(filter, data, options)
 }

@@ -42,8 +42,12 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/red-gold/telar-core v0.1.7 h1:pwIFfITRcnhmYPH2bLWiatkXizfyJEEmSICzMKPFmx8=
 github.com/red-gold/telar-core v0.1.7/go.mod h1:CQxfrf3OabHMPKjts/D1DHkvuGYrZmR/EayJfmIOCJg=
+github.com/red-gold/telar-core v0.1.8 h1:BIg6YG2PoMyx7+k3i3MBl6qxTLcQBs4Kbb4MQsf1hng=
+github.com/red-gold/telar-core v0.1.8/go.mod h1:CQxfrf3OabHMPKjts/D1DHkvuGYrZmR/EayJfmIOCJg=
 github.com/red-gold/ts-serverless v0.1.18 h1:aLzFvY2XPioV0th08j05jzv55lxE+X0CBJvj60lx+yk=
 github.com/red-gold/ts-serverless v0.1.18/go.mod h1:ujqXKAmJLUQRoVyK5m5a0xsZcv1gqSbKt4kS/M+8XNs=
+github.com/red-gold/ts-serverless v0.1.21 h1:9ipKBC+zHbLV36/ZdzVUMbNYZMwbG+n3c3LJXwWi/no=
+github.com/red-gold/ts-serverless v0.1.21/go.mod h1:ujqXKAmJLUQRoVyK5m5a0xsZcv1gqSbKt4kS/M+8XNs=
 github.com/rs/cors v1.7.0 h1:+88SsELBHx5r+hZ8TCkggzSstaWNbDvThkVK8H6f9ik=
 github.com/rs/cors v1.7.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
 github.com/sirupsen/logrus v1.8.0 h1:nfhvjKcUMhBMVqbKHJlk5RPrrfYr/NMo3692g0dwfWU=

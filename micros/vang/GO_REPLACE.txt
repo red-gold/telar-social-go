@@ -1,3 +1,0 @@
-replace github.com/red-gold/ts-serverless/micros/vang/handlers => ./function/handlers
-replace github.com/red-gold/ts-serverless/micros/vang/config => ./function/config
-replace github.com/red-gold/ts-serverless/micros/vang => ./function

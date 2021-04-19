@@ -76,7 +76,7 @@ func functionCall(method string, bytesReq []byte, url string, header map[string]
 	return resData, nil
 }
 
-// Send notification
+// Dispatch action
 func dispatchAction(action Action, userInfoInReq *UserInfoInReq) {
 
 	actionURL := fmt.Sprintf("/actions/dispatch/%s", userInfoInReq.UserId.String())
@@ -120,4 +120,67 @@ func getUserProfileByID(userID uuid.UUID) (*models.UserProfileModel, error) {
 		return nil, fmt.Errorf("getUserProfileByID/unmarshal")
 	}
 	return &foundProfile, nil
+}
+
+// getProfilesByUserIds Get user profiles by user IDs
+func getProfilesByUserIds(model models.GetProfilesModel, userInfoInReq *UserInfoInReq) ([]models.UserProfileModel, error) {
+	profileURL := "/profile/dto/ids"
+	body, marshalErr := json.Marshal(model)
+	if marshalErr != nil {
+		errorMessage := fmt.Sprintf("Marshal models.GetProfilesModel Error %s", marshalErr.Error())
+		fmt.Println(errorMessage)
+		return nil, marshalErr
+	}
+
+	// Create user headers for http request
+	userHeaders := make(map[string][]string)
+	userHeaders["uid"] = []string{userInfoInReq.UserId.String()}
+	userHeaders["email"] = []string{userInfoInReq.Username}
+	userHeaders["avatar"] = []string{userInfoInReq.Avatar}
+	userHeaders["displayName"] = []string{userInfoInReq.DisplayName}
+	userHeaders["role"] = []string{userInfoInReq.SystemRole}
+
+	foundProfilesData, err := functionCall(http.MethodPost, body, profileURL, nil)
+	if err != nil {
+		if err == NotFoundHTTPStatusError {
+			return nil, nil
+		}
+		log.Error("functionCall (%s) -  %s", profileURL, err.Error())
+		return nil, fmt.Errorf("getProfilesByUserIds/functionCall")
+	}
+	var foundProfile []models.UserProfileModel
+	err = json.Unmarshal(foundProfilesData, &foundProfile)
+	if err != nil {
+		log.Error("Unmarshal foundProfiles -  %s", err.Error())
+		return nil, fmt.Errorf("getProfilesByUserIds/unmarshal")
+	}
+	return foundProfile, nil
+}
+
+// dispatchProfileByUserIds Dispatch profile by user Ids
+func dispatchProfileByUserIds(model models.DispatchProfilesModel, userInfoInReq *UserInfoInReq) error {
+	profileURL := "/profile/dispatch"
+	body, marshalErr := json.Marshal(model)
+	if marshalErr != nil {
+		errorMessage := fmt.Sprintf("Marshal models.DispatchProfilesModel Error %s", marshalErr.Error())
+		fmt.Println(errorMessage)
+	}
+
+	// Create user headers for http request
+	userHeaders := make(map[string][]string)
+	userHeaders["uid"] = []string{userInfoInReq.UserId.String()}
+	userHeaders["email"] = []string{userInfoInReq.Username}
+	userHeaders["avatar"] = []string{userInfoInReq.Avatar}
+	userHeaders["displayName"] = []string{userInfoInReq.DisplayName}
+	userHeaders["role"] = []string{userInfoInReq.SystemRole}
+
+	_, err := functionCall(http.MethodPost, body, profileURL, userHeaders)
+	if err != nil {
+		if err == NotFoundHTTPStatusError {
+			return nil
+		}
+		log.Error("functionCall (%s) -  %s", profileURL, err.Error())
+		return fmt.Errorf("dispatchProfileByUserIds/functionCall")
+	}
+	return nil
 }

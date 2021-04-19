@@ -1,6 +1,6 @@
 environment:
   app_name: Telar Social
-  base_route_domain: "/function"
+  base_route_domain: ""
   db_type: mongo
   header_cookie_name: he
   org_avatar: https://avatars3.githubusercontent.com/u/43268620

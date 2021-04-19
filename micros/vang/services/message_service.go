@@ -217,7 +217,7 @@ func (s MessageServiceImpl) CreateMessageIndex(indexes map[string]interface{}) e
 }
 
 // GetMessageByRoomId get all message by room ID
-func (s MessageServiceImpl) GetMessageByRoomId(roomId *uuid.UUID, sortBy string, page int64, lteDate int64) ([]dto.Message, error) {
+func (s MessageServiceImpl) GetMessageByRoomId(roomId *uuid.UUID, sortBy string, page int64, lteDate int64, gteDate int64) ([]dto.Message, error) {
 	sortMap := make(map[string]int)
 	sortMap[sortBy] = -1
 	skip := numberOfItems * (page - 1)
@@ -232,6 +232,12 @@ func (s MessageServiceImpl) GetMessageByRoomId(roomId *uuid.UUID, sortBy string,
 	if lteDate > 0 {
 		lessEqualDate := make(map[string]interface{})
 		lessEqualDate["$lte"] = lteDate
+		filter["createdDate"] = lessEqualDate
+	}
+
+	if gteDate > 0 {
+		lessEqualDate := make(map[string]interface{})
+		lessEqualDate["$gte"] = lteDate
 		filter["createdDate"] = lessEqualDate
 	}
 
