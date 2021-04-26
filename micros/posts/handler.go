@@ -21,7 +21,6 @@ var db interface{}
 
 // Handler function
 func Handle(w http.ResponseWriter, r *http.Request) {
-
 	ctx := context.Background()
 
 	// Start

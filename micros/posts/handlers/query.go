@@ -72,7 +72,7 @@ func QueryPostHandle(db interface{}) func(server.Request) (handler.Response, err
 				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
 			}
 		}
-		postList, err := postService.QueryPost(searchParam, ownerUserIdList, postTypeId, "created_date", int64(page))
+		postList, err := postService.QueryPostIncludeUser(searchParam, ownerUserIdList, postTypeId, "created_date", int64(page))
 		if err != nil {
 			return handler.Response{StatusCode: http.StatusInternalServerError}, err
 		}

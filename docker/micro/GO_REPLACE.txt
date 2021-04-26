@@ -1,2 +1,3 @@
-replace github.com/red-gold/telar-core => github.com/red-gold/telar-core v0.1.8
-replace github.com/red-gold/ts-serverless => github.com/red-gold/ts-serverless v0.1.21
+replace github.com/red-gold/ts-serverless/micros/__micro_name/handlers => ./function/handlers
+replace github.com/red-gold/ts-serverless/micros/__micro_name/config => ./function/config
+replace github.com/red-gold/ts-serverless/micros/__micro_name => ./function

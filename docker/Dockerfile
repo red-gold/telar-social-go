@@ -19,14 +19,18 @@ RUN mkdir -p /go/src/function
 WORKDIR /go/src/handler
 COPY docker/main/go.mod go.mod
 COPY docker/main/main.go main.go
+COPY docker/main/GO_REPLACE.txt GO_REPLACE.txt
+COPY docker/telar-core function/telar-core
 RUN  sed -i "s|__micro_name|$MICRONAME|g" main.go
+RUN  sed -i "s|__micro_name|$MICRONAME|g" GO_REPLACE.txt
 
 RUN go mod tidy
 
 COPY micros/$MICRONAME function
-COPY docker/micro/GO_REPLACE.txt .
+COPY docker/micro/GO_REPLACE.txt function/GO_REPLACE.txt
 COPY docker/micro/go.mod function/go.mod
 RUN  sed -i "s|__micro_name|$MICRONAME|g" function/go.mod
+RUN  sed -i "s|__micro_name|$MICRONAME|g" function/GO_REPLACE.txt
 
 # Add user overrides to the root go.mod, which is the only place "replace" can be used
 RUN cat function/GO_REPLACE.txt >> ./go.mod || exit 0

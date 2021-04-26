@@ -74,6 +74,94 @@ func (s PostServiceImpl) FindOnePost(filter interface{}) (*dto.Post, error) {
 func (s PostServiceImpl) FindPostList(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.Post, error) {
 
 	result := <-s.PostRepo.Find(postCollectionName, filter, limit, skip, sort)
+
+	defer result.Close()
+	if result.Error() != nil {
+		return nil, result.Error()
+	}
+	var postList []dto.Post
+	for result.Next() {
+		var post dto.Post
+		errDecode := result.Decode(&post)
+		if errDecode != nil {
+			return nil, fmt.Errorf("Error docoding on dto.Post")
+		}
+		postList = append(postList, post)
+	}
+
+	return postList, nil
+}
+
+// FindPostsIncludeProfile get all posts by filter including user entity
+func (s PostServiceImpl) FindPostsIncludeProfile(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.Post, error) {
+	var pipeline []interface{}
+
+	matchOperator := make(map[string]interface{})
+	matchOperator["$match"] = filter
+
+	sortOperator := make(map[string]interface{})
+	sortOperator["$sort"] = sort
+
+	pipeline = append(pipeline, matchOperator, sortOperator)
+
+	if skip > 0 {
+		skipOperator := make(map[string]interface{})
+		skipOperator["$skip"] = skip
+		pipeline = append(pipeline, skipOperator)
+	}
+
+	if limit > 0 {
+		limitOperator := make(map[string]interface{})
+		limitOperator["$limit"] = limit
+		pipeline = append(pipeline, limitOperator)
+	}
+
+	lookupOperator := make(map[string]interface{})
+	lookupOperator["$lookup"] = map[string]string{
+		"localField":   "ownerUserId",
+		"from":         "userProfile",
+		"foreignField": "objectId",
+		"as":           "userinfo",
+	}
+
+	unwindOperator := make(map[string]interface{})
+	unwindOperator["$unwind"] = "$userinfo"
+
+	projectOperator := make(map[string]interface{})
+	project := make(map[string]interface{})
+
+	project["objectId"] = 1
+	project["postTypeId"] = 1
+	project["score"] = 1
+	project["votes"] = 1
+	project["viewCount"] = 1
+	project["body"] = 1
+	project["ownerUserId"] = 1
+	project["ownerDisplayName"] = "$userinfo.fullName"
+	project["ownerAvatar"] = "$userinfo.avatar"
+	project["tags"] = 1
+	project["commentCounter"] = 1
+	project["image"] = 1
+	project["imageFullPath"] = 1
+	project["video"] = 1
+	project["thumbnail"] = 1
+	project["album"] = 1
+	project["disableComments"] = 1
+	project["disableSharing"] = 1
+	project["deleted"] = 1
+	project["deletedDate"] = 1
+	project["created_date"] = 1
+	project["last_updated"] = 1
+	project["accessUserList"] = 1
+	project["permission"] = 1
+	project["version"] = 1
+
+	projectOperator["$project"] = project
+
+	pipeline = append(pipeline, lookupOperator, unwindOperator, projectOperator)
+
+	result := <-s.PostRepo.Aggregate(postCollectionName, pipeline)
+
 	defer result.Close()
 	if result.Error() != nil {
 		return nil, result.Error()
@@ -112,6 +200,31 @@ func (s PostServiceImpl) QueryPost(search string, ownerUserIds []uuid.UUID, post
 	}
 	fmt.Println(filter)
 	result, err := s.FindPostList(filter, limit, skip, sortMap)
+
+	return result, err
+}
+
+// QueryPostIncludeUser get all posts by query including user entity
+func (s PostServiceImpl) QueryPostIncludeUser(search string, ownerUserIds []uuid.UUID, postTypeId *int, sortBy string, page int64) ([]dto.Post, error) {
+	sortMap := make(map[string]int)
+	sortMap[sortBy] = -1
+	skip := numberOfItems * (page - 1)
+	limit := numberOfItems
+
+	filter := make(map[string]interface{})
+	if search != "" {
+		filter["$text"] = coreData.SearchOperator{Search: search}
+	}
+	if ownerUserIds != nil {
+		inFilter := make(map[string]interface{})
+		inFilter["$in"] = ownerUserIds
+		filter["ownerUserId"] = inFilter
+	}
+	if postTypeId != nil {
+		filter["postTypeId"] = *postTypeId
+	}
+
+	result, err := s.FindPostsIncludeProfile(filter, limit, skip, sortMap)
 
 	return result, err
 }

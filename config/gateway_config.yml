@@ -1,6 +1,6 @@
 environment:
   cookie_root_domain: .telar.dev
   gateway: https://social.faas.telar.dev
-  internal_gateway: http://gateway.openfaas:8080
-  origin: https://social.faas.telar.dev
+  internal_gateway: http://gateway.openfaas:8080/function
+  origin: "https://social.faas.telar.dev,https://social.telar.dev,https://auth.telar.dev"
   websocket_server_url: https://red-gold-socket.herokuapp.com
