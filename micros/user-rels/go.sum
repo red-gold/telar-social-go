@@ -89,15 +89,14 @@ github.com/plivo/plivo-go v5.5.1+incompatible/go.mod h1:OhnI9crdl6O+D94Lp1lvuwJo
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/red-gold/telar-core v0.1.3/go.mod h1:Lut4rGGcYL1s9OmmooDwVK3ko21vFN5f5S0wUmqR4Fk=
-github.com/red-gold/telar-core v0.1.8/go.mod h1:CQxfrf3OabHMPKjts/D1DHkvuGYrZmR/EayJfmIOCJg=
 github.com/red-gold/telar-core v0.1.10 h1:q2bpdIgee7BRC5fnVcM0RL3pCIG9eCNTOjcs3VnUhiw=
 github.com/red-gold/telar-core v0.1.10/go.mod h1:JdeL5OLMsNUspxjoxM4b7DDmiEDHj9MRZuuw8QO8ui4=
 github.com/red-gold/telar-web v0.1.19 h1:sP6HKjHiJo9ItTyB13TLeRsdwrDp9D68FlNHzj2vxBs=
 github.com/red-gold/telar-web v0.1.19/go.mod h1:3bURvA+IpSrfJ6PWAnxqZDjEt6UI8DsQDa2TfiCf/WQ=
 github.com/red-gold/telar-web/micros/notifications v0.0.0-20210228035214-84737143b022 h1:YQEr9xdhfF4f7p8yZy4tnaRFKPdt/2eSI0DOqRiQaM8=
 github.com/red-gold/telar-web/micros/notifications v0.0.0-20210228035214-84737143b022/go.mod h1:ateGTG7UnB5bkzHla2z3VpW4UDZVydUzvZlkrte2qgA=
-github.com/red-gold/ts-serverless v0.1.22 h1:Wjmr0HpjDrF87u0ncABYPOSz2yoXRg30CPifY1HNj78=
-github.com/red-gold/ts-serverless v0.1.22/go.mod h1:oFb8YP4qs6iO4A93Y2D1xu5LCFiABqESzZkCAOW2Zok=
+github.com/red-gold/ts-serverless v0.1.25 h1:s2oTAeGL152mNS6I6f/wwrHykmVXYOzoaayjCTK19ZQ=
+github.com/red-gold/ts-serverless v0.1.25/go.mod h1:J/60CaiVd81lYAxTSiwMOb0Db0FppG+Lyo87U1rcYAM=
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.2.2/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
