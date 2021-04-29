@@ -8,5 +8,5 @@ require (
 	github.com/openfaas-incubator/go-function-sdk v0.0.0-20200405082418-b31e65bf8a33
 	github.com/red-gold/telar-core v0.1.10
 	github.com/red-gold/telar-web/micros/notifications v0.0.0-20210228035214-84737143b022
-	github.com/red-gold/ts-serverless v0.1.25
+	github.com/red-gold/ts-serverless v0.1.27
 )

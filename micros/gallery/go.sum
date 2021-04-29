@@ -89,8 +89,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/red-gold/telar-core v0.1.10 h1:q2bpdIgee7BRC5fnVcM0RL3pCIG9eCNTOjcs3VnUhiw=
 github.com/red-gold/telar-core v0.1.10/go.mod h1:JdeL5OLMsNUspxjoxM4b7DDmiEDHj9MRZuuw8QO8ui4=
-github.com/red-gold/ts-serverless v0.1.25 h1:s2oTAeGL152mNS6I6f/wwrHykmVXYOzoaayjCTK19ZQ=
-github.com/red-gold/ts-serverless v0.1.25/go.mod h1:J/60CaiVd81lYAxTSiwMOb0Db0FppG+Lyo87U1rcYAM=
+github.com/red-gold/ts-serverless v0.1.27 h1:qmZexkUQyZHpgqHhDijSk1Nd3MK+KLg7nhoZWOKzsds=
+github.com/red-gold/ts-serverless v0.1.27/go.mod h1:J/60CaiVd81lYAxTSiwMOb0Db0FppG+Lyo87U1rcYAM=
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.2.2/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
