@@ -9,6 +9,7 @@ import (
 
 	uuid "github.com/gofrs/uuid"
 	handler "github.com/openfaas-incubator/go-function-sdk"
+	"github.com/red-gold/telar-core/pkg/log"
 	server "github.com/red-gold/telar-core/server"
 	utils "github.com/red-gold/telar-core/utils"
 	models "github.com/red-gold/ts-serverless/micros/gallery/models"
@@ -238,6 +239,7 @@ func GetMediaByDirectoryHandle(db interface{}) func(server.Request) (handler.Res
 
 		foundMediaList, err := mediaService.FindByDirectory(req.UserID, dirName, 0, 0)
 		if err != nil {
+			log.Error("FindByDirectory %s", err.Error())
 			return handler.Response{StatusCode: http.StatusInternalServerError}, err
 		}
 
@@ -245,6 +247,7 @@ func GetMediaByDirectoryHandle(db interface{}) func(server.Request) (handler.Res
 		if marshalErr != nil {
 			errorMessage := fmt.Sprintf("Error while marshaling mediaModel: %s",
 				marshalErr.Error())
+			log.Error(errorMessage)
 			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("marshalMediaModelError", errorMessage)},
 				marshalErr
 

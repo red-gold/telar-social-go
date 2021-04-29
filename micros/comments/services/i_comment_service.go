@@ -11,6 +11,7 @@ type CommentService interface {
 	FindOneComment(filter interface{}) (*dto.Comment, error)
 	FindCommentList(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.Comment, error)
 	QueryComment(search string, ownerUserId *uuid.UUID, commentTypeId *int, sortBy string, page int64) ([]dto.Comment, error)
+	QueryCommentIncludeProfile(search string, ownerUserId *uuid.UUID, commentTypeId *int, sortBy string, page int64) ([]dto.Comment, error)
 	FindById(objectId uuid.UUID) (*dto.Comment, error)
 	FindByOwnerUserId(ownerUserId uuid.UUID) ([]dto.Comment, error)
 	UpdateComment(filter interface{}, data interface{}) error

@@ -93,6 +93,78 @@ func (s CommentServiceImpl) FindCommentList(filter interface{}, limit int64, ski
 	return commentList, nil
 }
 
+// FindComments get all comments by filter including user profile
+func (s CommentServiceImpl) FindCommentsInclueProfile(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.Comment, error) {
+	var pipeline []interface{}
+
+	matchOperator := make(map[string]interface{})
+	matchOperator["$match"] = filter
+
+	sortOperator := make(map[string]interface{})
+	sortOperator["$sort"] = sort
+
+	pipeline = append(pipeline, matchOperator, sortOperator)
+
+	if skip > 0 {
+		skipOperator := make(map[string]interface{})
+		skipOperator["$skip"] = skip
+		pipeline = append(pipeline, skipOperator)
+	}
+
+	if limit > 0 {
+		limitOperator := make(map[string]interface{})
+		limitOperator["$limit"] = limit
+		pipeline = append(pipeline, limitOperator)
+	}
+
+	lookupOperator := make(map[string]interface{})
+	lookupOperator["$lookup"] = map[string]string{
+		"localField":   "ownerUserId",
+		"from":         "userProfile",
+		"foreignField": "objectId",
+		"as":           "userinfo",
+	}
+
+	unwindOperator := make(map[string]interface{})
+	unwindOperator["$unwind"] = "$userinfo"
+
+	projectOperator := make(map[string]interface{})
+	project := make(map[string]interface{})
+
+	project["objectId"] = 1
+	project["score"] = 1
+	project["text"] = 1
+	project["ownerUserId"] = 1
+	project["ownerDisplayName"] = "$userinfo.fullName"
+	project["ownerAvatar"] = "$userinfo.avatar"
+	project["postId"] = 1
+	project["deleted"] = 1
+	project["deletedDate"] = 1
+	project["created_date"] = 1
+	project["last_updated"] = 1
+
+	projectOperator["$project"] = project
+
+	pipeline = append(pipeline, lookupOperator, unwindOperator, projectOperator)
+
+	result := <-s.CommentRepo.Aggregate(commentCollectionName, pipeline)
+	defer result.Close()
+	if result.Error() != nil {
+		return nil, result.Error()
+	}
+	var commentList []dto.Comment
+	for result.Next() {
+		var comment dto.Comment
+		errDecode := result.Decode(&comment)
+		if errDecode != nil {
+			return nil, fmt.Errorf("Error docoding on dto.Comment")
+		}
+		commentList = append(commentList, comment)
+	}
+
+	return commentList, nil
+}
+
 // QueryComment get all comments by query
 func (s CommentServiceImpl) QueryComment(search string, ownerUserId *uuid.UUID, commentTypeId *int, sortBy string, page int64) ([]dto.Comment, error) {
 	sortMap := make(map[string]int)
@@ -112,6 +184,29 @@ func (s CommentServiceImpl) QueryComment(search string, ownerUserId *uuid.UUID, 
 	}
 	fmt.Println(filter)
 	result, err := s.FindCommentList(filter, limit, skip, sortMap)
+
+	return result, err
+}
+
+// QueryComment get all comments by query
+func (s CommentServiceImpl) QueryCommentIncludeProfile(search string, ownerUserId *uuid.UUID, commentTypeId *int, sortBy string, page int64) ([]dto.Comment, error) {
+	sortMap := make(map[string]int)
+	sortMap[sortBy] = -1
+	skip := numberOfItems * (page - 1)
+	limit := numberOfItems
+
+	filter := make(map[string]interface{})
+	if search != "" {
+		filter["$text"] = coreData.SearchOperator{Search: search}
+	}
+	if ownerUserId != nil {
+		filter["ownerUserId"] = *ownerUserId
+	}
+	if commentTypeId != nil {
+		filter["commentTypeId"] = *commentTypeId
+	}
+	fmt.Println(filter)
+	result, err := s.FindCommentsInclueProfile(filter, limit, skip, sortMap)
 
 	return result, err
 }
