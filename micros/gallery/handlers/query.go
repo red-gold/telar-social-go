@@ -1,260 +1,182 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
 	"github.com/red-gold/telar-core/pkg/log"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/parser"
+	"github.com/red-gold/telar-core/types"
 	utils "github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/gallery/database"
 	models "github.com/red-gold/ts-serverless/micros/gallery/models"
 	service "github.com/red-gold/ts-serverless/micros/gallery/services"
 )
 
+type MediaQueryModel struct {
+	Search string    `query:"search"`
+	Page   int64     `query:"page"`
+	Owner  uuid.UUID `query:"owner"`
+	Type   int       `query:"type"`
+}
+
+type AlbumQueryModel struct {
+	Page  int64     `query:"page"`
+	Limit int64     `query:"limit"`
+	Album uuid.UUID `query:"album"`
+}
+
 // QueryMediaHandle handle query on media
-func QueryMediaHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func QueryMediaHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		var query *url.Values
-		if len(req.QueryString) > 0 {
-			q, err := url.ParseQuery(string(req.QueryString))
-			if err != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, err
-			}
-			query = &q
-		}
-		searchParam := query.Get("search")
-		pageParam := query.Get("page")
-		ownerUserIdParam := query.Get("owner")
-		mediaTypeIdParam := query.Get("type")
-
-		var ownerUserId *uuid.UUID = nil
-		if ownerUserIdParam != "" {
-
-			parsedUUID, uuidErr := uuid.FromString(ownerUserIdParam)
-
-			if uuidErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, uuidErr
-			}
-
-			ownerUserId = &parsedUUID
-		}
-
-		var mediaTypeId *int = nil
-		if mediaTypeIdParam != "" {
-
-			parsedType, strErr := strconv.Atoi(mediaTypeIdParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-			mediaTypeId = &parsedType
-		}
-		page := 0
-		if pageParam != "" {
-			var strErr error
-			page, strErr = strconv.Atoi(pageParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-		}
-		mediaList, err := mediaService.QueryMedia(searchParam, ownerUserId, mediaTypeId, "created_date", int64(page))
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(mediaList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling mediaList: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("mediaListMarshalError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
 	}
+
+	query := new(MediaQueryModel)
+
+	if err := parser.QueryParser(c, query); err != nil {
+		log.Error("[QueryMediaHandle] QueryParser %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryParser", "Error happened while parsing query!"))
+	}
+
+	mediaList, err := mediaService.QueryMedia(query.Search, &query.Owner, &query.Type, "created_date", query.Page)
+	if err != nil {
+		log.Error("[QueryMediaHandle.mediaService.QueryMedia] %s ", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/queryMedia", "Error happened while query media!"))
+
+	}
+
+	return c.JSON(mediaList)
+
 }
 
 // QueryAlbumHandle handle query on media
-func QueryAlbumHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func QueryAlbumHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		var query *url.Values
-		if len(req.QueryString) > 0 {
-			q, err := url.ParseQuery(string(req.QueryString))
-			if err != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, err
-			}
-			query = &q
-		}
-		pageParam := query.Get("page")
-		limitParam := query.Get("limit")
-		albumIdParam := query.Get("album")
-
-		var albumId *uuid.UUID = nil
-		if albumIdParam != "" {
-
-			parsedUUID, uuidErr := uuid.FromString(albumIdParam)
-
-			if uuidErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, uuidErr
-			}
-
-			albumId = &parsedUUID
-		}
-
-		page := 0
-		if pageParam != "" {
-			var strErr error
-			page, strErr = strconv.Atoi(pageParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-		}
-
-		limit := 0
-		if limitParam != "" {
-			var strErr error
-			limit, strErr = strconv.Atoi(limitParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-		}
-		mediaList, err := mediaService.QueryAlbum(req.UserID, albumId, int64(page), int64(limit), "created_date")
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(mediaList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling mediaList: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("mediaListMarshalError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
 	}
+
+	query := new(AlbumQueryModel)
+
+	if err := parser.QueryParser(c, query); err != nil {
+		log.Error("[QueryAlbumHandle] QueryParser %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryParser", "Error happened while parsing query!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[QueryAlbumHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	mediaList, err := mediaService.QueryAlbum(currentUser.UserID, &query.Album, query.Page, query.Limit, "created_date")
+	if err != nil {
+		log.Error("[QueryAlbumHandle.mediaService.QueryAlbum] %s ", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/queryMedia", "Error happened while query media!"))
+	}
+
+	return c.JSON(mediaList)
+
 }
 
 // GetMediaHandle handle get a media
-func GetMediaHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetMediaHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// params from /medias/id/:mediaId
-		mediaId := req.GetParamByName("mediaId")
-		mediaUUID, uuidErr := uuid.FromString(mediaId)
-		if uuidErr != nil {
-			return handler.Response{StatusCode: http.StatusBadRequest,
-					Body: utils.MarshalError("parseUUIDError", "Can not parse media id!")},
-				nil
-		}
-
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		foundMedia, err := mediaService.FindById(mediaUUID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		mediaModel := models.MediaModel{
-			ObjectId:       foundMedia.ObjectId,
-			DeletedDate:    foundMedia.DeletedDate,
-			CreatedDate:    foundMedia.CreatedDate,
-			Thumbnail:      foundMedia.Thumbnail,
-			URL:            foundMedia.URL,
-			FullPath:       foundMedia.FullPath,
-			Caption:        foundMedia.Caption,
-			FileName:       foundMedia.FileName,
-			Directory:      foundMedia.Directory,
-			OwnerUserId:    foundMedia.OwnerUserId,
-			LastUpdated:    foundMedia.LastUpdated,
-			AlbumId:        foundMedia.AlbumId,
-			Width:          foundMedia.Width,
-			Height:         foundMedia.Height,
-			Meta:           foundMedia.Meta,
-			AccessUserList: foundMedia.AccessUserList,
-			Permission:     foundMedia.Permission,
-			Deleted:        foundMedia.Deleted,
-		}
-
-		body, marshalErr := json.Marshal(mediaModel)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling mediaModel: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("marshalMediaModelError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /medias/id/:mediaId
+	mediaId := c.Params("mediaId")
+	if mediaId == "" {
+		errorMessage := fmt.Sprintf("Media Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("mediaIdRequired", errorMessage))
 	}
+
+	mediaUUID, uuidErr := uuid.FromString(mediaId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("mediaIdIsNotValid", "Media id is not valid!"))
+	}
+
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
+	}
+
+	foundMedia, err := mediaService.FindById(mediaUUID)
+	if err != nil {
+		log.Error("[GetMediaHandle.mediaService.FindById] %s ", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/queryMedia", "Error happened while query media!"))
+	}
+
+	mediaModel := models.MediaModel{
+		ObjectId:       foundMedia.ObjectId,
+		DeletedDate:    foundMedia.DeletedDate,
+		CreatedDate:    foundMedia.CreatedDate,
+		Thumbnail:      foundMedia.Thumbnail,
+		URL:            foundMedia.URL,
+		FullPath:       foundMedia.FullPath,
+		Caption:        foundMedia.Caption,
+		FileName:       foundMedia.FileName,
+		Directory:      foundMedia.Directory,
+		OwnerUserId:    foundMedia.OwnerUserId,
+		LastUpdated:    foundMedia.LastUpdated,
+		AlbumId:        foundMedia.AlbumId,
+		Width:          foundMedia.Width,
+		Height:         foundMedia.Height,
+		Meta:           foundMedia.Meta,
+		AccessUserList: foundMedia.AccessUserList,
+		Permission:     foundMedia.Permission,
+		Deleted:        foundMedia.Deleted,
+	}
+
+	return c.JSON(mediaModel)
+
 }
 
 // GetMediaByDirectoryHandle handle get media list by directory
-func GetMediaByDirectoryHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetMediaByDirectoryHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /medias/dir/:dir
-		dirName := req.GetParamByName("dir")
-		if dirName == "" {
-			errorMessage := fmt.Sprintf("Directory name is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("dirNameRequired", errorMessage)}, nil
-		}
-
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		foundMediaList, err := mediaService.FindByDirectory(req.UserID, dirName, 0, 0)
-		if err != nil {
-			log.Error("FindByDirectory %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(foundMediaList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling mediaModel: %s",
-				marshalErr.Error())
-			log.Error(errorMessage)
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("marshalMediaModelError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /medias/dir/:dir
+	dirName := c.Params("dir")
+	if dirName == "" {
+		errorMessage := fmt.Sprintf("Directory name is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("dirNameRequired", errorMessage))
 	}
+
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[GetMediaByDirectoryHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	foundMediaList, err := mediaService.FindByDirectory(currentUser.UserID, dirName, 0, 0)
+	if err != nil {
+		log.Error("[GetMediaByDirectoryHandle.mediaService.FindByDirectory] %s ", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/queryMedia", "Error happened while query media!"))
+	}
+
+	return c.JSON(foundMediaList)
+
 }

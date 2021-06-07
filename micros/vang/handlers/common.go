@@ -12,7 +12,7 @@ import (
 	"github.com/gofrs/uuid"
 	coreConfig "github.com/red-gold/telar-core/config"
 	log "github.com/red-gold/telar-core/pkg/log"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
 	models "github.com/red-gold/ts-serverless/micros/vang/models"
 )
@@ -42,8 +42,8 @@ func functionCall(method string, bytesReq []byte, url string, header map[string]
 
 	digest := hmac.Sign(bytesReq, []byte(*coreConfig.AppConfig.PayloadSecret))
 	httpReq.Header.Set("Content-type", "application/json")
-	fmt.Printf("\ndigest: %s, header: %v \n", "sha1="+hex.EncodeToString(digest), server.X_Cloud_Signature)
-	httpReq.Header.Add(server.X_Cloud_Signature, "sha1="+hex.EncodeToString(digest))
+	fmt.Printf("\ndigest: %s, header: %v \n", "sha1="+hex.EncodeToString(digest), types.HeaderHMACAuthenticate)
+	httpReq.Header.Add(types.HeaderHMACAuthenticate, "sha1="+hex.EncodeToString(digest))
 
 	if header != nil {
 		for k, v := range header {

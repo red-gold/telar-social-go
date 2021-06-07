@@ -1,174 +1,132 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/pkg/parser"
+	"github.com/red-gold/telar-core/types"
 	utils "github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/user-rels/database"
 	service "github.com/red-gold/ts-serverless/micros/user-rels/services"
 )
 
+type UserRelQueryModel struct {
+	Search string    `query:"search"`
+	Page   int64     `query:"page"`
+	Owner  uuid.UUID `query:"owner"`
+}
+
 // QueryUserRelHandle handle query on userRel
-func QueryUserRelHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func QueryUserRelHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		userRelService, serviceErr := service.NewUserRelService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		var query *url.Values
-		if len(req.QueryString) > 0 {
-			q, err := url.ParseQuery(string(req.QueryString))
-			if err != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, err
-			}
-			query = &q
-		}
-		searchParam := query.Get("search")
-		pageParam := query.Get("page")
-		ownerUserIdParam := query.Get("owner")
-
-		var ownerUserId *uuid.UUID = nil
-		if ownerUserIdParam != "" {
-
-			parsedUUID, uuidErr := uuid.FromString(ownerUserIdParam)
-
-			if uuidErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, uuidErr
-			}
-
-			ownerUserId = &parsedUUID
-		}
-
-		page := 0
-		if pageParam != "" {
-			var strErr error
-			page, strErr = strconv.Atoi(pageParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-		}
-		userRelList, err := userRelService.QueryUserRel(searchParam, ownerUserId, "created_date", int64(page))
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(userRelList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling userRelList: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("userRelListMarshalError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	userRelService, serviceErr := service.NewUserRelService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewUserRelService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/userRelService", "Error happened while creating userRelService!"))
 	}
+
+	query := new(UserRelQueryModel)
+
+	if err := parser.QueryParser(c, query); err != nil {
+		log.Error("[QueryUserRelHandle] QueryParser %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryParser", "Error happened while parsing query!"))
+	}
+
+	userRelList, err := userRelService.QueryUserRel(query.Search, &query.Owner, "created_date", query.Page)
+	if err != nil {
+		log.Error("[QueryUserRelHandle.userRelService.QueryUserRel] %s", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/queryUserRel", "Error happened while reading followers!"))
+	}
+
+	return c.JSON(userRelList)
 }
 
 // GetUserRelHandle handle get a userRel
-func GetUserRelHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetUserRelHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		userRelService, serviceErr := service.NewUserRelService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-		userRelId := req.GetParamByName("userRelId")
-		userRelUUID, uuidErr := uuid.FromString(userRelId)
-		if uuidErr != nil {
-			return handler.Response{StatusCode: http.StatusBadRequest,
-					Body: utils.MarshalError("parseUUIDError", "Can not parse userRel id!")},
-				nil
-		}
-
-		foundUserRel, err := userRelService.FindById(userRelUUID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(foundUserRel)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling userRelModel: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: []byte(utils.MarshalError("marshalUserRelModel", errorMessage))},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	userRelService, serviceErr := service.NewUserRelService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewUserRelService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/userRelService", "Error happened while creating userRelService!"))
 	}
+	userRelId := c.Params("userRelId")
+	if userRelId == "" {
+		errorMessage := fmt.Sprintf("UserRel Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("userRelIdRequired", errorMessage))
+
+	}
+
+	userRelUUID, uuidErr := uuid.FromString(userRelId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("userRelIdIsNotValid", "user rel id is not valid!"))
+	}
+
+	foundUserRel, err := userRelService.FindById(userRelUUID)
+	if err != nil {
+		log.Error("[GetUserRelHandle.userRelService.FindById] %s", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/findById", "Error happened while reading followers!"))
+	}
+
+	return c.JSON(foundUserRel)
 }
 
 // GetFollowersHandle handle get auth user followers
-func GetFollowersHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetFollowersHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		userRelService, serviceErr := service.NewUserRelService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		followers, err := userRelService.GetFollowers(req.UserID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(followers)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling userRelModel: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: []byte(utils.MarshalError("marshalUserRelModel", errorMessage))},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	userRelService, serviceErr := service.NewUserRelService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewUserRelService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/userRelService", "Error happened while creating userRelService!"))
 	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[GetFollowersHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	followers, err := userRelService.GetFollowers(currentUser.UserID)
+	if err != nil {
+		log.Error("[GetFollowersHandle.userRelService.GetFollowers] %s", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/getFollowers", "Error happened while reading followers!"))
+	}
+
+	return c.JSON(followers)
 }
 
 // GetFollowingHandle handle get auth user following
-func GetFollowingHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetFollowingHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		userRelService, serviceErr := service.NewUserRelService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		followers, err := userRelService.GetFollowing(req.UserID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(followers)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling userRelModel: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: []byte(utils.MarshalError("marshalUserRelModel", errorMessage))},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	userRelService, serviceErr := service.NewUserRelService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewUserRelService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/userRelService", "Error happened while creating userRelService!"))
 	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[GetFollowingHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	following, err := userRelService.GetFollowing(currentUser.UserID)
+	if err != nil {
+		log.Error("[GetFollowingHandle.userRelService.GetFollowing] %s", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/getFollowing", "Error happened while reading following!"))
+	}
+
+	return c.JSON(following)
 }

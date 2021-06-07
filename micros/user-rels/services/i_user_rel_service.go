@@ -20,7 +20,7 @@ type UserRelService interface {
 	CreateUserRelIndex(indexes map[string]interface{}) error
 	GetFollowers(userId uuid.UUID) ([]dto.UserRel, error)
 	GetFollowing(userId uuid.UUID) ([]dto.UserRel, error)
-	FollowUser(leftUser dto.UserRelMeta, rightUser dto.UserRelMeta, circleIds []string) error
+	FollowUser(leftUser dto.UserRelMeta, rightUser dto.UserRelMeta, circleIds []string, tags []string) error
 	UpdateRelCircles(leftId uuid.UUID, rightId uuid.UUID, circleIds []string) error
 	UnfollowUser(leftId uuid.UUID, rightId uuid.UUID) error
 	DeleteCircle(circleId string) error

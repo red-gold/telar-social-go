@@ -92,7 +92,7 @@ func (s PostServiceImpl) FindPostList(filter interface{}, limit int64, skip int6
 	return postList, nil
 }
 
-// FindPostsIncludeProfile get all posts by filter including user entity
+// FindPostsIncludeProfile get all posts by filter including user profile entity
 func (s PostServiceImpl) FindPostsIncludeProfile(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.Post, error) {
 	var pipeline []interface{}
 

@@ -4,115 +4,125 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/user-rels/database"
 	service "github.com/red-gold/ts-serverless/micros/user-rels/services"
 )
 
 // DeleteUserRelHandle handle delete a userRel
-func DeleteUserRelHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func DeleteUserRelHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
+	// params from /user-rels/:userRelId
+	userRelId := c.Params("userRelId")
+	if userRelId == "" {
+		errorMessage := fmt.Sprintf("UserRel Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("userRelIdRequired", errorMessage))
 
-		// params from /user-rels/:userRelId
-		userRelId := req.GetParamByName("userRelId")
-		if userRelId == "" {
-			errorMessage := fmt.Sprintf("UserRel Id is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("userRelIdRequired", errorMessage)}, nil
-		}
-		fmt.Printf("\n UserRel ID: %s", userRelId)
-		userRelUUID, uuidErr := uuid.FromString(userRelId)
-		if uuidErr != nil {
-			errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("uuidError", errorMessage)}, nil
-		}
-		fmt.Printf("\n UserRel UUID: %s", userRelUUID)
-		// Create service
-		userRelService, serviceErr := service.NewUserRelService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("UserRel Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("userRelServiceError", errorMessage)}, nil
-
-		}
-
-		if err := userRelService.DeleteUserRelByOwner(req.UserID, userRelUUID); err != nil {
-			errorMessage := fmt.Sprintf("Delete UserRel Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deleteUserRelError", errorMessage)}, nil
-
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
 	}
+
+	userRelUUID, uuidErr := uuid.FromString(userRelId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("userRelIdIsNotValid", "user rel id is not valid!"))
+	}
+
+	// Create service
+	userRelService, serviceErr := service.NewUserRelService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewUserRelService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/userRelService", "Error happened while creating userRelService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[DeleteUserRelHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := userRelService.DeleteUserRelByOwner(currentUser.UserID, userRelUUID); err != nil {
+		errorMessage := fmt.Sprintf("Delete UserRel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/deleteUserRel", "Error happened while removing user-rel!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
 }
 
 // UnfollowHandle handle delete a userRel
-func UnfollowHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func UnfollowHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /user-rels/unfollow/:userId
-		userFollowingId := req.GetParamByName("userId")
-		if userFollowingId == "" {
-			errorMessage := fmt.Sprintf("User Id is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("userIdRequired", errorMessage)}, nil
-		}
-
-		userFollowingUUID, uuidErr := uuid.FromString(userFollowingId)
-		if uuidErr != nil {
-			errorMessage := fmt.Sprintf("userFollowingUUID Error %s", uuidErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("userFollowingUUIDError", errorMessage)}, nil
-		}
-
-		// Create service
-		userRelService, serviceErr := service.NewUserRelService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("UserRel Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("userRelServiceError", errorMessage)}, nil
-
-		}
-
-		if err := userRelService.UnfollowUser(req.UserID, userFollowingUUID); err != nil {
-			errorMessage := fmt.Sprintf("Delete UserRel Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deleteUserRelError", errorMessage)}, nil
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /user-rels/unfollow/:userId
+	userFollowingId := c.Params("userId")
+	if userFollowingId == "" {
+		errorMessage := fmt.Sprintf("User Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("userIdRequired", errorMessage))
 	}
+
+	userFollowingUUID, uuidErr := uuid.FromString(userFollowingId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("userFollowingUUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("userFollowingIdIsNotValid", "user following id is not valid!"))
+	}
+
+	// Create service
+	userRelService, serviceErr := service.NewUserRelService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewUserRelService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/userRelService", "Error happened while creating userRelService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[UnfollowHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := userRelService.UnfollowUser(currentUser.UserID, userFollowingUUID); err != nil {
+		errorMessage := fmt.Sprintf("Delete UserRel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/unfollowUser", "Error happened while removing user-rel!"))
+	}
+
+	// Decrease user follow count
+	go increaseUserFollowCount(currentUser.UserID, -1, getUserInfoReq(c))
+	// Decrease user follower count
+	go increaseUserFollowerCount(userFollowingUUID, -1, getUserInfoReq(c))
+
+	return c.SendStatus(http.StatusOK)
 }
 
 // DeleteCircle handle delete a userRel
-func DeleteCircle(db interface{}) func(server.Request) (handler.Response, error) {
+func DeleteCircle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /user-rels/circle/:circleId
-		circleId := req.GetParamByName("circleId")
-		if circleId == "" {
-			errorMessage := fmt.Sprintf("Circle Id is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("circleId", errorMessage)}, nil
-		}
-
-		// Create service
-		userRelService, serviceErr := service.NewUserRelService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("UserRel Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("userRelServiceError", errorMessage)}, nil
-
-		}
-
-		if err := userRelService.DeleteCircle(circleId); err != nil {
-			errorMessage := fmt.Sprintf("Delete circle from user-rel Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deleteCircleUserRelError", errorMessage)}, nil
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /user-rels/circle/:circleId
+	circleId := c.Params("circleId")
+	if circleId == "" {
+		errorMessage := fmt.Sprintf("Circle Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("circleIdRequired", errorMessage))
 	}
+
+	// Create service
+	userRelService, serviceErr := service.NewUserRelService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewUserRelService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/userRelService", "Error happened while creating userRelService!"))
+	}
+
+	if err := userRelService.DeleteCircle(circleId); err != nil {
+		errorMessage := fmt.Sprintf("Delete circle from user-rel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/deleteCircle", "Error happened while removing circle!"))
+	}
+	return c.SendStatus(http.StatusOK)
 }

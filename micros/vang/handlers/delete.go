@@ -4,48 +4,53 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	log "github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/vang/database"
 	service "github.com/red-gold/ts-serverless/micros/vang/services"
 )
 
 // DeleteMessageHandle handle delete a Message
-func DeleteMessageHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func DeleteMessageHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /message/id/:messageId
-		messageId := req.GetParamByName("messageId")
-		if messageId == "" {
-			errorMessage := fmt.Sprintf("Message Id is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("messageIdRequired", errorMessage)}, nil
-		}
-		fmt.Printf("\n Message ID: %s", messageId)
-		messageUUID, uuidErr := uuid.FromString(messageId)
-		if uuidErr != nil {
-			errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("uuidError", errorMessage)}, nil
-		}
-		fmt.Printf("\n Message UUID: %s", messageUUID)
-		// Create service
-		messageService, serviceErr := service.NewMessageService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("Message Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("messageServiceError", errorMessage)}, nil
-
-		}
-
-		if err := messageService.DeleteMessageByOwner(req.UserID, messageUUID); err != nil {
-			errorMessage := fmt.Sprintf("Delete Message Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deleteMessageError", errorMessage)}, nil
-
-		}
-
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /message/id/:messageId
+	messageId := c.Params("messageId")
+	if messageId == "" {
+		errorMessage := fmt.Sprintf("Message Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("messageIdRequired", errorMessage))
 	}
+
+	messageUUID, uuidErr := uuid.FromString(messageId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("messageIdIsNotValid", "Message id is not valid!"))
+	}
+
+	// Create service
+	messageService, serviceErr := service.NewMessageService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMessageService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/messageService", "Error happened while creating messageService!"))
+
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[DeleteMessageHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := messageService.DeleteMessageByOwner(currentUser.UserID, messageUUID); err != nil {
+		errorMessage := fmt.Sprintf("Delete Message Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/deleteMessage", "Error happened while removing message!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
 }

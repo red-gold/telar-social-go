@@ -2,52 +2,60 @@ package function
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
-	coreServer "github.com/red-gold/telar-core/server"
+	"github.com/gofiber/adaptor/v2"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/red-gold/telar-core/config"
+	"github.com/red-gold/telar-core/pkg/log"
 	micros "github.com/red-gold/ts-serverless/micros"
-	"github.com/red-gold/ts-serverless/micros/posts/handlers"
+	"github.com/red-gold/ts-serverless/micros/posts/database"
+	"github.com/red-gold/ts-serverless/micros/posts/router"
 )
+
+// Cache state
+var app *fiber.App
 
 func init() {
 
 	micros.InitConfig()
-}
 
-// Cache state
-var server *coreServer.ServerRouter
-var db interface{}
+	// Initialize app
+	app = fiber.New()
+	app.Use(recover.New())
+	app.Use(requestid.New())
+	app.Use(logger.New(
+		logger.Config{
+			Format: "[${time}] ${status} - ${latency} ${method} ${path} - ${header:}\n​",
+		},
+	))
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     *config.AppConfig.Origin,
+		AllowCredentials: true,
+		AllowHeaders:     "Origin, Content-Type, Accept, Access-Control-Allow-Headers, X-Requested-With, X-HTTP-Method-Override, access-control-allow-origin, access-control-allow-headers",
+	}))
+	router.SetupRoutes(app)
+
+}
 
 // Handler function
 func Handle(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
-	// Start
-	if db == nil {
+	if database.Db == nil {
 		var startErr error
-		db, startErr = micros.Start(ctx)
+		startErr = database.Connect(ctx)
 		if startErr != nil {
-			fmt.Printf("Error startup: %s", startErr.Error())
+			log.Error("Error startup: %s", startErr.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(startErr.Error()))
 		}
 	}
 
-	// Server Routing
-	if server == nil {
-		server = coreServer.NewServerRouter()
-		server.POST("/", handlers.CreatePostHandle(db), coreServer.RouteProtectionCookie)
-		server.POST("/index", handlers.InitPostIndexHandle(db), coreServer.RouteProtectionHMAC)
-		server.PUT("/", handlers.UpdatePostHandle(db), coreServer.RouteProtectionCookie)
-		server.PUT("/profile", handlers.UpdatePostProfileHandle(db), coreServer.RouteProtectionCookie)
-		server.PUT("/score/+1/:postId", handlers.IncrementScoreHandle(db), coreServer.RouteProtectionHMAC)
-		server.PUT("/score/-1/:postId", handlers.DecrementScoreHandle(db), coreServer.RouteProtectionHMAC)
-		server.PUT("/comment/+1/:postId", handlers.IncrementCommentHandle(db), coreServer.RouteProtectionHMAC)
-		server.PUT("/comment/-1/:postId", handlers.DecrementCommentHandle(db), coreServer.RouteProtectionHMAC)
-		server.DELETE("/:postId", handlers.DeletePostHandle(db), coreServer.RouteProtectionCookie)
-		server.GET("/", handlers.QueryPostHandle(db), coreServer.RouteProtectionCookie)
-		server.GET("/:postId", handlers.GetPostHandle(db), coreServer.RouteProtectionCookie)
-	}
-	server.ServeHTTP(w, r)
+	adaptor.FiberApp(app)(w, r)
+
 }

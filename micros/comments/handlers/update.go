@@ -1,75 +1,87 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/gofiber/fiber/v2"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/comments/database"
 	domain "github.com/red-gold/ts-serverless/micros/comments/dto"
 	models "github.com/red-gold/ts-serverless/micros/comments/models"
 	service "github.com/red-gold/ts-serverless/micros/comments/services"
 )
 
 // UpdateCommentHandle handle create a new comment
-func UpdateCommentHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func UpdateCommentHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// Create the model object
-		var model models.CommentModel
-		if err := json.Unmarshal(req.Body, &model); err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		// Create service
-		commentService, serviceErr := service.NewCommentService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		updatedComment := &domain.Comment{
-			ObjectId:         model.ObjectId,
-			OwnerUserId:      req.UserID,
-			PostId:           model.PostId,
-			Score:            model.Score,
-			Text:             model.Text,
-			OwnerDisplayName: req.DisplayName,
-			OwnerAvatar:      req.Avatar,
-			Deleted:          model.Deleted,
-			DeletedDate:      model.DeletedDate,
-			CreatedDate:      model.CreatedDate,
-			LastUpdated:      model.LastUpdated,
-		}
-
-		if err := commentService.UpdateCommentById(updatedComment); err != nil {
-			errorMessage := fmt.Sprintf("Update Comment Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("updateCommentError", errorMessage)}, nil
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create the model object
+	model := new(models.CommentModel)
+	if err := c.BodyParser(model); err != nil {
+		errorMessage := fmt.Sprintf("Parse CommentModel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/parseModel", "Error happened while parsing model!"))
 	}
+
+	// Create service
+	commentService, serviceErr := service.NewCommentService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewCommentService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/commentService", "Error happened while creating commentService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[UpdateCommentHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	updatedComment := &domain.Comment{
+		ObjectId:         model.ObjectId,
+		OwnerUserId:      currentUser.UserID,
+		PostId:           model.PostId,
+		Score:            model.Score,
+		Text:             model.Text,
+		OwnerDisplayName: currentUser.DisplayName,
+		OwnerAvatar:      currentUser.Avatar,
+		Deleted:          model.Deleted,
+		DeletedDate:      model.DeletedDate,
+		CreatedDate:      model.CreatedDate,
+		LastUpdated:      model.LastUpdated,
+	}
+
+	if err := commentService.UpdateCommentById(updatedComment); err != nil {
+		errorMessage := fmt.Sprintf("Update Comment Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/updateComment", "Error happened while update comment!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
+
 }
 
 // UpdateCommentProfileHandle handle create a new post
-func UpdateCommentProfileHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func UpdateCommentProfileHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// Create service
-		postService, serviceErr := service.NewCommentService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		postService.UpdateCommentProfile(req.UserID, req.DisplayName, req.Avatar)
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	postService, serviceErr := service.NewCommentService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewCommentService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/commentService", "Error happened while creating commentService!"))
 	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[UpdateCommentProfileHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	postService.UpdateCommentProfile(currentUser.UserID, currentUser.DisplayName, currentUser.Avatar)
+
+	return c.JSON(http.StatusOK)
+
 }

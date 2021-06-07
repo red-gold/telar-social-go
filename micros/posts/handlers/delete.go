@@ -4,49 +4,53 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/posts/database"
 	service "github.com/red-gold/ts-serverless/micros/posts/services"
 )
 
 // DeletePostHandle handle delete a post
-func DeletePostHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func DeletePostHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /posts/:postId
-		postId := req.GetParamByName("postId")
-		if postId == "" {
-			errorMessage := fmt.Sprintf("Post Id is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("postIdRequired", errorMessage)}, nil
-		}
-
-		fmt.Printf("\n Post ID: %s", postId)
-		postUUID, uuidErr := uuid.FromString(postId)
-		if uuidErr != nil {
-			errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("uuidError", errorMessage)}, nil
-		}
-
-		fmt.Printf("\n Post UUID: %s", postUUID)
-		// Create service
-		postService, serviceErr := service.NewPostService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("Post Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("postServiceError", errorMessage)}, nil
-
-		}
-
-		if err := postService.DeletePostByOwner(req.UserID, postUUID); err != nil {
-			errorMessage := fmt.Sprintf("Delete Post Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deletePostError", errorMessage)}, nil
-
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /posts/:postId
+	postId := c.Params("postId")
+	if postId == "" {
+		errorMessage := fmt.Sprintf("Post Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("postIdRequired", errorMessage))
 	}
+
+	postUUID, uuidErr := uuid.FromString(postId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("postIdIsNotValid", "Post id is not valid!"))
+	}
+
+	// Create service
+	postService, serviceErr := service.NewPostService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewPostService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/postService", "Error happened while creating postService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[DeletePostHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := postService.DeletePostByOwner(currentUser.UserID, postUUID); err != nil {
+		errorMessage := fmt.Sprintf("Delete Post Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/deletePost", "Error happened while deleting post!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
+
 }

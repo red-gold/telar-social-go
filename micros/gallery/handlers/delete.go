@@ -4,80 +4,88 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/gallery/database"
 	service "github.com/red-gold/ts-serverless/micros/gallery/services"
 )
 
 // DeleteMediaHandle handle delete a media
-func DeleteMediaHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func DeleteMediaHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /medias/id/:mediaId
-		mediaId := req.GetParamByName("mediaId")
-		if mediaId == "" {
-			errorMessage := fmt.Sprintf("Media Id is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("mediaIdRequired", errorMessage)}, nil
-		}
-		fmt.Printf("\n Media ID: %s", mediaId)
-		mediaUUID, uuidErr := uuid.FromString(mediaId)
-		if uuidErr != nil {
-			errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("uuidError", errorMessage)}, nil
-		}
-		fmt.Printf("\n Media UUID: %s", mediaUUID)
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("Media Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("mediaServiceError", errorMessage)}, nil
-
-		}
-
-		if err := mediaService.DeleteMediaByOwner(req.UserID, mediaUUID); err != nil {
-			errorMessage := fmt.Sprintf("Delete Media Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deleteMediaError", errorMessage)}, nil
-
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /medias/id/:mediaId
+	mediaId := c.Params("mediaId")
+	if mediaId == "" {
+		errorMessage := fmt.Sprintf("Media Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("mediaIdRequired", errorMessage))
 	}
+
+	mediaUUID, uuidErr := uuid.FromString(mediaId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("mediaIdIsNotValid", "Media id is not valid!"))
+	}
+
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[DeleteMediaHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := mediaService.DeleteMediaByOwner(currentUser.UserID, mediaUUID); err != nil {
+		errorMessage := fmt.Sprintf("Delete Media Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/deleteMedia", "Error happened while delete media!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
+
 }
 
 // DeleteDirectoryHandle handle delete a media
-func DeleteDirectoryHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func DeleteDirectoryHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /medias/dir/:dir
-		dirName := req.GetParamByName("dir")
-		if dirName == "" {
-			errorMessage := fmt.Sprintf("Directory name is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("dirNameRequired", errorMessage)}, nil
-		}
-		fmt.Printf("\n Directory ID: %s", dirName)
-
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("Media Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("mediaServiceError", errorMessage)}, nil
-
-		}
-
-		if err := mediaService.DeleteMediaByDirectory(req.UserID, dirName); err != nil {
-			errorMessage := fmt.Sprintf("Delete Media Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deleteMediaError", errorMessage)}, nil
-
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /medias/dir/:dir
+	dirName := c.Params("dir")
+	if dirName == "" {
+		errorMessage := fmt.Sprintf("Directory name is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("directoryNameIsRequired", errorMessage))
 	}
+
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
+
+	}
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[DeleteDirectoryHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := mediaService.DeleteMediaByDirectory(currentUser.UserID, dirName); err != nil {
+		errorMessage := fmt.Sprintf("Delete Media Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/deleteMedia", "Error happened while delete media!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
+
 }

@@ -1,167 +1,120 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
-	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/pkg/parser"
 	utils "github.com/red-gold/telar-core/utils"
 	"github.com/red-gold/ts-serverless/constants"
+	"github.com/red-gold/ts-serverless/micros/posts/database"
 	models "github.com/red-gold/ts-serverless/micros/posts/models"
 	service "github.com/red-gold/ts-serverless/micros/posts/services"
 )
 
+type PostQueryModel struct {
+	Search string      `query:"search"`
+	Page   int64       `query:"page"`
+	Owner  []uuid.UUID `query:"owner"`
+	Type   int         `query:"type"`
+}
+
 // QueryPostHandle handle query on post
-func QueryPostHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func QueryPostHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		postService, serviceErr := service.NewPostService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		var query *url.Values
-		if len(req.QueryString) > 0 {
-			q, err := url.ParseQuery(string(req.QueryString))
-			if err != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, err
-			}
-			query = &q
-		}
-		searchParam := query.Get("search")
-		pageParam := query.Get("page")
-		ownerUserIdParam := query.Get("owner")
-		postTypeIdParam := query.Get("type")
-
-		var ownerUserIdList []uuid.UUID
-
-		if ownerUserIdParam != "" {
-			for _, userIdParam := range strings.Split(ownerUserIdParam, ",") {
-
-				parsedUUID, uuidErr := uuid.FromString(userIdParam)
-
-				if uuidErr != nil {
-					return handler.Response{StatusCode: http.StatusInternalServerError}, uuidErr
-				}
-
-				ownerUserIdList = append(ownerUserIdList, parsedUUID)
-			}
-		}
-
-		var postTypeId *int = nil
-		if postTypeIdParam != "" {
-
-			parsedType, strErr := strconv.Atoi(postTypeIdParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-			postTypeId = &parsedType
-		}
-		page := 0
-		if pageParam != "" {
-			var strErr error
-			page, strErr = strconv.Atoi(pageParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-		}
-		postList, err := postService.QueryPostIncludeUser(searchParam, ownerUserIdList, postTypeId, "created_date", int64(page))
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(postList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling postList: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("postListMarshalError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	postService, serviceErr := service.NewPostService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewPostService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/postService", "Error happened while creating postService!"))
 	}
+
+	query := new(PostQueryModel)
+
+	if err := parser.QueryParser(c, query); err != nil {
+		log.Error("[QueryPostHandle] QueryParser %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryParser", "Error happened while parsing query!"))
+	}
+
+	postList, err := postService.QueryPostIncludeUser(query.Search, query.Owner, &query.Type, "created_date", query.Page)
+	if err != nil {
+		log.Error("[QueryPostHandle.postService.QueryPostIncludeUser] %s ", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/queryPost", "Error happened while query post!"))
+	}
+
+	return c.JSON(postList)
+
 }
 
 // GetPostHandle handle get a post
-func GetPostHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetPostHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		postService, serviceErr := service.NewPostService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-		postId := req.GetParamByName("postId")
-		postUUID, uuidErr := uuid.FromString(postId)
-		if uuidErr != nil {
-			return handler.Response{StatusCode: http.StatusBadRequest,
-					Body: utils.MarshalError("parseUUIDError", "Can not parse post id!")},
-				nil
-		}
-
-		foundPost, err := postService.FindById(postUUID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		postModel := models.PostModel{
-			ObjectId:         foundPost.ObjectId,
-			PostTypeId:       foundPost.PostTypeId,
-			OwnerUserId:      foundPost.OwnerUserId,
-			Score:            foundPost.Score,
-			Votes:            foundPost.Votes,
-			ViewCount:        foundPost.ViewCount,
-			Body:             foundPost.Body,
-			OwnerDisplayName: foundPost.OwnerDisplayName,
-			OwnerAvatar:      foundPost.OwnerAvatar,
-			Tags:             foundPost.Tags,
-			CommentCounter:   foundPost.CommentCounter,
-			Image:            foundPost.Image,
-			ImageFullPath:    foundPost.ImageFullPath,
-			Video:            foundPost.Video,
-			Thumbnail:        foundPost.Thumbnail,
-			DisableComments:  foundPost.DisableComments,
-			DisableSharing:   foundPost.DisableSharing,
-			Deleted:          foundPost.Deleted,
-			DeletedDate:      foundPost.DeletedDate,
-			CreatedDate:      foundPost.CreatedDate,
-			LastUpdated:      foundPost.LastUpdated,
-			AccessUserList:   foundPost.AccessUserList,
-			Permission:       foundPost.Permission,
-			Version:          foundPost.Version,
-		}
-
-		if foundPost.PostTypeId == constants.PostConstAlbum.Parse() || foundPost.PostTypeId == constants.PostConstPhotoGallery.Parse() {
-			postModel.Album = models.PostAlbumModel{
-				Count:   foundPost.Album.Count,
-				Cover:   foundPost.Album.Cover,
-				CoverId: foundPost.Album.CoverId,
-				Photos:  foundPost.Album.Photos,
-				Title:   foundPost.Album.Title,
-			}
-		}
-
-		body, marshalErr := json.Marshal(postModel)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling postModel: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("marshalPostModelError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	postService, serviceErr := service.NewPostService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewPostService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/postService", "Error happened while creating postService!"))
 	}
+	postId := c.Params("postId")
+	if postId == "" {
+		errorMessage := fmt.Sprintf("Post Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("postIdRequired", errorMessage))
+	}
+
+	postUUID, uuidErr := uuid.FromString(postId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("postIdIsNotValid", "Post id is not valid!"))
+	}
+
+	foundPost, err := postService.FindById(postUUID)
+	if err != nil {
+		log.Error("[GetPostHandle.postService.FindById] %s ", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/queryPost", "Error happened while query post!"))
+	}
+
+	postModel := models.PostModel{
+		ObjectId:         foundPost.ObjectId,
+		PostTypeId:       foundPost.PostTypeId,
+		OwnerUserId:      foundPost.OwnerUserId,
+		Score:            foundPost.Score,
+		Votes:            foundPost.Votes,
+		ViewCount:        foundPost.ViewCount,
+		Body:             foundPost.Body,
+		OwnerDisplayName: foundPost.OwnerDisplayName,
+		OwnerAvatar:      foundPost.OwnerAvatar,
+		Tags:             foundPost.Tags,
+		CommentCounter:   foundPost.CommentCounter,
+		Image:            foundPost.Image,
+		ImageFullPath:    foundPost.ImageFullPath,
+		Video:            foundPost.Video,
+		Thumbnail:        foundPost.Thumbnail,
+		DisableComments:  foundPost.DisableComments,
+		DisableSharing:   foundPost.DisableSharing,
+		Deleted:          foundPost.Deleted,
+		DeletedDate:      foundPost.DeletedDate,
+		CreatedDate:      foundPost.CreatedDate,
+		LastUpdated:      foundPost.LastUpdated,
+		AccessUserList:   foundPost.AccessUserList,
+		Permission:       foundPost.Permission,
+		Version:          foundPost.Version,
+	}
+
+	if foundPost.PostTypeId == constants.PostConstAlbum.Parse() || foundPost.PostTypeId == constants.PostConstPhotoGallery.Parse() {
+		postModel.Album = models.PostAlbumModel{
+			Count:   foundPost.Album.Count,
+			Cover:   foundPost.Album.Cover,
+			CoverId: foundPost.Album.CoverId,
+			Photos:  foundPost.Album.Photos,
+			Title:   foundPost.Album.Title,
+		}
+	}
+
+	return c.JSON(postModel)
+
 }

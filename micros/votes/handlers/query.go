@@ -1,129 +1,95 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/pkg/parser"
 	utils "github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/votes/database"
 	models "github.com/red-gold/ts-serverless/micros/votes/models"
 	service "github.com/red-gold/ts-serverless/micros/votes/services"
 )
 
+type VoteQueryModel struct {
+	Page   int64     `query:"page"`
+	PostId uuid.UUID `query:"postId"`
+}
+
 // GetVotesByPostIdHandle handle query on vote
-func GetVotesByPostIdHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetVotesByPostIdHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		voteService, serviceErr := service.NewVoteService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		var query *url.Values
-		if len(req.QueryString) > 0 {
-			q, err := url.ParseQuery(string(req.QueryString))
-			if err != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, err
-			}
-			query = &q
-		}
-		postIdParam := query.Get("postId")
-		pageParam := query.Get("page")
-
-		var postId *uuid.UUID = nil
-		if postIdParam != "" {
-
-			parsedUUID, uuidErr := uuid.FromString(postIdParam)
-
-			if uuidErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, uuidErr
-			}
-
-			postId = &parsedUUID
-		} else {
-			errorMessage := fmt.Sprintf("Post id can not be empty.")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("postIdEmptyError", errorMessage)},
-				nil
-		}
-
-		page := 0
-		if pageParam != "" {
-			var strErr error
-			page, strErr = strconv.Atoi(pageParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-		}
-
-		voteList, err := voteService.GetVoteByPostId(postId, "created_date", int64(page))
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(voteList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling voteList: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("voteListMarshalError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	voteService, serviceErr := service.NewVoteService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewVoteService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/voteService", "Error happened while creating voteService!"))
 	}
+
+	query := new(VoteQueryModel)
+
+	if err := parser.QueryParser(c, query); err != nil {
+		log.Error("[GetVotesByPostIdHandle] QueryParser %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryParser", "Error happened while parsing query!"))
+	}
+
+	if query.PostId == uuid.Nil {
+		errorMessage := fmt.Sprintf("Post id can not be empty.")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("postIdRequired", errorMessage))
+	}
+
+	voteList, err := voteService.GetVoteByPostId(&query.PostId, "created_date", query.Page)
+	if err != nil {
+		log.Error("[GetVotesByPostIdHandle.voteService.GetVoteByPostId] %s ", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/getVoteByPostId", "Error happened while query vote!"))
+	}
+
+	return c.JSON(voteList)
 }
 
 // GetVoteHandle handle get a vote
-func GetVoteHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetVoteHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		voteService, serviceErr := service.NewVoteService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-		voteId := req.GetParamByName("voteId")
-		voteUUID, uuidErr := uuid.FromString(voteId)
-		if uuidErr != nil {
-			return handler.Response{StatusCode: http.StatusBadRequest,
-					Body: utils.MarshalError("parseUUIDError", "Can not parse vote id!")},
-				nil
-		}
-
-		foundVote, err := voteService.FindById(voteUUID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		voteModel := models.VoteModel{
-			ObjectId:         foundVote.ObjectId,
-			OwnerUserId:      foundVote.OwnerUserId,
-			PostId:           foundVote.PostId,
-			OwnerDisplayName: foundVote.OwnerDisplayName,
-			OwnerAvatar:      foundVote.OwnerAvatar,
-			CreatedDate:      foundVote.CreatedDate,
-			TypeId:           foundVote.TypeId,
-		}
-
-		body, marshalErr := json.Marshal(voteModel)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("{error: 'Error while marshaling voteModel: %s'}",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: []byte(errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	voteService, serviceErr := service.NewVoteService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewVoteService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/voteService", "Error happened while creating voteService!"))
 	}
+	voteId := c.Params("voteId")
+	if voteId == "" {
+		errorMessage := fmt.Sprintf("Vote Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("voteIdRequired", errorMessage))
+	}
+
+	voteUUID, uuidErr := uuid.FromString(voteId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("voteIdIsNotValid", "Vote id is not valid!"))
+	}
+
+	foundVote, err := voteService.FindById(voteUUID)
+	if err != nil {
+		errorMessage := fmt.Sprintf("Find Vote %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/findVote", "Error happened while find Vote!"))
+	}
+
+	voteModel := models.VoteModel{
+		ObjectId:         foundVote.ObjectId,
+		OwnerUserId:      foundVote.OwnerUserId,
+		PostId:           foundVote.PostId,
+		OwnerDisplayName: foundVote.OwnerDisplayName,
+		OwnerAvatar:      foundVote.OwnerAvatar,
+		CreatedDate:      foundVote.CreatedDate,
+		TypeId:           foundVote.TypeId,
+	}
+
+	return c.JSON(voteModel)
 }

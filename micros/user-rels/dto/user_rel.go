@@ -10,5 +10,6 @@ type UserRel struct {
 	Right       UserRelMeta `json:"right" bson:"right"`
 	RightId     uuid.UUID   `json:"rightId" bson:"rightId"`
 	Rel         []string    `json:"rel" bson:"rel"`
+	Tags        []string    `json:"tags" bson:"tags"`
 	CircleIds   []string    `json:"circleIds" bson:"circleIds"`
 }

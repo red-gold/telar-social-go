@@ -1,122 +1,134 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/gofiber/fiber/v2"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/gallery/database"
 	domain "github.com/red-gold/ts-serverless/micros/gallery/dto"
 	models "github.com/red-gold/ts-serverless/micros/gallery/models"
 	service "github.com/red-gold/ts-serverless/micros/gallery/services"
 )
 
 // CreateMediaHandle handle create a new media
-func CreateMediaHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func CreateMediaHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// Create the model object
-		var model models.CreateMediaModel
-		if err := json.Unmarshal(req.Body, &model); err != nil {
-			errorMessage := fmt.Sprintf("Unmarshal CreateMediaModel Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("modelMarshalError", errorMessage)}, nil
-		}
-
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("media Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("mediaServiceError", errorMessage)}, nil
-		}
-
-		newMedia := &domain.Media{
-			ObjectId:       model.ObjectId,
-			DeletedDate:    0,
-			CreatedDate:    utils.UTCNowUnix(),
-			Thumbnail:      model.Thumbnail,
-			URL:            model.URL,
-			FullPath:       model.FullPath,
-			Caption:        model.Caption,
-			FileName:       model.FileName,
-			Directory:      model.Directory,
-			OwnerUserId:    req.UserID,
-			LastUpdated:    0,
-			AlbumId:        model.AlbumId,
-			Width:          model.Width,
-			Height:         model.Height,
-			Meta:           model.Meta,
-			AccessUserList: model.AccessUserList,
-			Permission:     model.Permission,
-			Deleted:        false,
-		}
-
-		if err := mediaService.SaveMedia(newMedia); err != nil {
-			errorMessage := fmt.Sprintf("Save Media Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("saveMediaError", errorMessage)}, nil
-		}
-
-		return handler.Response{
-			Body:       []byte(fmt.Sprintf(`{"success": true, "objectId": "%s"}`, newMedia.ObjectId.String())),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create the model object
+	model := new(models.CreateMediaModel)
+	if err := c.BodyParser(model); err != nil {
+		errorMessage := fmt.Sprintf("Parse CreateMediaModel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/parseModel", "Error happened while parsing model!"))
 	}
+
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[CreateMediaHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	newMedia := &domain.Media{
+		ObjectId:       model.ObjectId,
+		DeletedDate:    0,
+		CreatedDate:    utils.UTCNowUnix(),
+		Thumbnail:      model.Thumbnail,
+		URL:            model.URL,
+		FullPath:       model.FullPath,
+		Caption:        model.Caption,
+		FileName:       model.FileName,
+		Directory:      model.Directory,
+		OwnerUserId:    currentUser.UserID,
+		LastUpdated:    0,
+		AlbumId:        model.AlbumId,
+		Width:          model.Width,
+		Height:         model.Height,
+		Meta:           model.Meta,
+		AccessUserList: model.AccessUserList,
+		Permission:     model.Permission,
+		Deleted:        false,
+	}
+
+	if err := mediaService.SaveMedia(newMedia); err != nil {
+		errorMessage := fmt.Sprintf("Save Media Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/saveMedia", "Error happened while saving media!"))
+	}
+
+	return c.JSON(fiber.Map{
+		"objectId": newMedia.ObjectId.String(),
+	})
+
 }
 
 // CreateMediaListHandle handle create a new media
-func CreateMediaListHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func CreateMediaListHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// Create the model object
-		var model models.CreateMediaListModel
-		if err := json.Unmarshal(req.Body, &model); err != nil {
-			errorMessage := fmt.Sprintf("Unmarshal CreateMediaModel Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("modelMarshalError", errorMessage)}, nil
-		}
-
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("media Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("mediaServiceError", errorMessage)}, nil
-		}
-		var mediaList []domain.Media
-		for _, media := range model.List {
-
-			newMedia := domain.Media{
-				ObjectId:       media.ObjectId,
-				DeletedDate:    0,
-				CreatedDate:    utils.UTCNowUnix(),
-				Thumbnail:      media.Thumbnail,
-				URL:            media.URL,
-				FullPath:       media.FullPath,
-				Caption:        media.Caption,
-				FileName:       media.FileName,
-				Directory:      media.Directory,
-				OwnerUserId:    req.UserID,
-				LastUpdated:    0,
-				AlbumId:        media.AlbumId,
-				Width:          media.Width,
-				Height:         media.Height,
-				Meta:           media.Meta,
-				AccessUserList: media.AccessUserList,
-				Permission:     media.Permission,
-				Deleted:        false,
-			}
-			mediaList = append(mediaList, newMedia)
-		}
-
-		if err := mediaService.SaveManyMedia(mediaList); err != nil {
-			errorMessage := fmt.Sprintf("Save Media Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("saveMediaError", errorMessage)}, nil
-		}
-
-		return handler.Response{
-			Body:       []byte(fmt.Sprintf(`{"success": true}`)),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create the model object
+	model := new(models.CreateMediaListModel)
+	if err := c.BodyParser(model); err != nil {
+		errorMessage := fmt.Sprintf("Parse CreateMediaListModel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/parseModel", "Error happened while parsing model!"))
 	}
+
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[CreateMediaListHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	var mediaList []domain.Media
+	for _, media := range model.List {
+
+		newMedia := domain.Media{
+			ObjectId:       media.ObjectId,
+			DeletedDate:    0,
+			CreatedDate:    utils.UTCNowUnix(),
+			Thumbnail:      media.Thumbnail,
+			URL:            media.URL,
+			FullPath:       media.FullPath,
+			Caption:        media.Caption,
+			FileName:       media.FileName,
+			Directory:      media.Directory,
+			OwnerUserId:    currentUser.UserID,
+			LastUpdated:    0,
+			AlbumId:        media.AlbumId,
+			Width:          media.Width,
+			Height:         media.Height,
+			Meta:           media.Meta,
+			AccessUserList: media.AccessUserList,
+			Permission:     media.Permission,
+			Deleted:        false,
+		}
+		mediaList = append(mediaList, newMedia)
+	}
+
+	if err := mediaService.SaveManyMedia(mediaList); err != nil {
+		errorMessage := fmt.Sprintf("Save Media Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/saveMedia", "Error happened while saving media!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
+
 }

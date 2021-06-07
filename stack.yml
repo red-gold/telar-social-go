@@ -2,7 +2,7 @@ functions:
   circles:
     lang: golang-middleware
     handler: ./micros/circles
-    image: qolzam/circles:v0.2.3
+    image: qolzam/circles:v0.2.4
     fprocess: ""
     environment: {}
     secrets:
@@ -23,7 +23,7 @@ functions:
   comments:
     lang: golang-middleware
     handler: ./micros/comments
-    image: qolzam/comments:v0.2.3
+    image: qolzam/comments:v0.2.4
     fprocess: ""
     environment: {}
     secrets:
@@ -44,7 +44,7 @@ functions:
   media:
     lang: golang-middleware
     handler: ./micros/gallery
-    image: qolzam/media:v0.2.3
+    image: qolzam/media:v0.2.4
     fprocess: ""
     environment: {}
     secrets:
@@ -65,7 +65,7 @@ functions:
   posts:
     lang: golang-middleware
     handler: ./micros/posts
-    image: qolzam/posts:v0.2.3
+    image: qolzam/posts:v0.2.4
     fprocess: ""
     environment: {}
     secrets:
@@ -86,7 +86,7 @@ functions:
   user-rels:
     lang: golang-middleware
     handler: ./micros/user-rels
-    image: qolzam/user-rels:v0.2.3
+    image: qolzam/user-rels:v0.2.4
     fprocess: ""
     environment: {}
     secrets:
@@ -107,7 +107,7 @@ functions:
   votes:
     lang: golang-middleware
     handler: ./micros/votes
-    image: qolzam/votes:v0.2.3
+    image: qolzam/votes:v0.2.4
     fprocess: ""
     environment: {}
     secrets:
@@ -128,7 +128,7 @@ functions:
   vang:
     lang: golang-middleware
     handler: ./micros/vang
-    image: qolzam/vang:v0.2.3
+    image: qolzam/vang:v0.2.4
     fprocess: ""
     environment: {}
     secrets:

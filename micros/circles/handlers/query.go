@@ -1,144 +1,110 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/pkg/parser"
+	"github.com/red-gold/telar-core/types"
 	utils "github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/circles/database"
 	service "github.com/red-gold/ts-serverless/micros/circles/services"
 )
 
+type CircleQueryModel struct {
+	Search string    `query:"search"`
+	Page   int64     `query:"page"`
+	Owner  uuid.UUID `query:"owner"`
+}
+
 // QueryCircleHandle handle query on circle
-func QueryCircleHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func QueryCircleHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		circleService, serviceErr := service.NewCircleService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		var query *url.Values
-		if len(req.QueryString) > 0 {
-			q, err := url.ParseQuery(string(req.QueryString))
-			if err != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, err
-			}
-			query = &q
-		}
-		searchParam := query.Get("search")
-		pageParam := query.Get("page")
-		ownerUserIdParam := query.Get("owner")
-
-		var ownerUserId *uuid.UUID = nil
-		if ownerUserIdParam != "" {
-
-			parsedUUID, uuidErr := uuid.FromString(ownerUserIdParam)
-
-			if uuidErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, uuidErr
-			}
-
-			ownerUserId = &parsedUUID
-		}
-
-		page := 0
-		if pageParam != "" {
-			var strErr error
-			page, strErr = strconv.Atoi(pageParam)
-			if strErr != nil {
-				return handler.Response{StatusCode: http.StatusInternalServerError}, strErr
-			}
-		}
-		circleList, err := circleService.QueryCircle(searchParam, ownerUserId, "created_date", int64(page))
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(circleList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling circleList: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("circleListMarshalError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	circleService, serviceErr := service.NewCircleService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewCircleService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/circleService", "Error happened while creating circleService!"))
 	}
+
+	query := new(CircleQueryModel)
+
+	if err := parser.QueryParser(c, query); err != nil {
+		log.Error("[QueryCircleHandle] QueryParser %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryParser", "Error happened while parsing query!"))
+	}
+
+	circleList, err := circleService.QueryCircle(query.Search, &query.Owner, "created_date", query.Page)
+	if err != nil {
+		log.Error("Query circle %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryCircle", "Can not query circle!"))
+	}
+
+	return c.JSON(circleList)
+
 }
 
 // GetMyCircleHandle handle get authed user circle
-func GetMyCircleHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetMyCircleHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		circleService, serviceErr := service.NewCircleService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		circleList, err := circleService.FindByOwnerUserId(req.UserID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(circleList)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling circleList: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("circleListMarshalError", errorMessage)},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	circleService, serviceErr := service.NewCircleService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewCircleService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/circleService", "Error happened while creating circleService!"))
 	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[GetMyCircleHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	circleList, err := circleService.FindByOwnerUserId(currentUser.UserID)
+	if err != nil {
+		log.Error("[GetMyCircleHandle.circleService.FindByOwnerUserId] %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("queryParser", "Error happened while finding circle by user id!"))
+	}
+
+	return c.JSON(circleList)
+
 }
 
 // GetCircleHandle handle get a circle
-func GetCircleHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func GetCircleHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-		// Create service
-		circleService, serviceErr := service.NewCircleService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-		circleId := req.GetParamByName("circleId")
-		circleUUID, uuidErr := uuid.FromString(circleId)
-		if uuidErr != nil {
-			return handler.Response{StatusCode: http.StatusBadRequest,
-					Body: utils.MarshalError("parseUUIDError", "Can not parse circle id!")},
-				nil
-		}
-
-		foundCircle, err := circleService.FindById(circleUUID)
-		if err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		body, marshalErr := json.Marshal(foundCircle)
-		if marshalErr != nil {
-			errorMessage := fmt.Sprintf("Error while marshaling circleModel: %s",
-				marshalErr.Error())
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: []byte(utils.MarshalError("marshalCircleModel", errorMessage))},
-				marshalErr
-
-		}
-		return handler.Response{
-			Body:       []byte(body),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create service
+	circleService, serviceErr := service.NewCircleService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewCircleService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/circleService", "Error happened while creating circleService!"))
 	}
+	circleId := c.Params("circleId")
+	if circleId == "" {
+		errorMessage := fmt.Sprintf("Circle Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("circleIdRequired", errorMessage))
+	}
+
+	circleUUID, uuidErr := uuid.FromString(circleId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("circleIdIsNotValid", "Circle id is not valid!"))
+
+	}
+
+	foundCircle, err := circleService.FindById(circleUUID)
+	if err != nil {
+		errorMessage := fmt.Sprintf("Find Circle %s - %s", circleUUID.String(), err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("findCircle", "Can not find circle!"))
+	}
+
+	return c.JSON(foundCircle)
+
 }

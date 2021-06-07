@@ -1,82 +1,91 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	handler "github.com/openfaas-incubator/go-function-sdk"
+	"github.com/gofiber/fiber/v2"
 	"github.com/red-gold/telar-core/pkg/log"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/vang/database"
 	domain "github.com/red-gold/ts-serverless/micros/vang/dto"
 	models "github.com/red-gold/ts-serverless/micros/vang/models"
 	service "github.com/red-gold/ts-serverless/micros/vang/services"
 )
 
 // UpdateMessageHandle handle create a new vang
-func UpdateMessageHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func UpdateMessageHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// Create the model object
-		var model models.MessageModel
-		if err := json.Unmarshal(req.Body, &model); err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		// Create service
-		messageService, serviceErr := service.NewMessageService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		updatedMessage := &domain.Message{
-			ObjectId:    model.ObjectId,
-			OwnerUserId: req.UserID,
-			RoomId:      model.RoomId,
-			Text:        model.Text,
-			CreatedDate: model.CreatedDate,
-			UpdatedDate: model.UpdatedDate,
-		}
-
-		if err := messageService.UpdateMessageById(updatedMessage); err != nil {
-			errorMessage := fmt.Sprintf("Update Message Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("updateMessageError", errorMessage)}, nil
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create the model object
+	model := new(models.MessageModel)
+	if err := c.BodyParser(model); err != nil {
+		errorMessage := fmt.Sprintf("Parse MessageModel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/parseModel", "Error happened while parsing model!"))
 	}
+
+	// Create service
+	messageService, serviceErr := service.NewMessageService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMessageService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/messageService", "Error happened while creating messageService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[UpdateMessageHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	updatedMessage := &domain.Message{
+		ObjectId:    model.ObjectId,
+		OwnerUserId: currentUser.UserID,
+		RoomId:      model.RoomId,
+		Text:        model.Text,
+		CreatedDate: model.CreatedDate,
+		UpdatedDate: model.UpdatedDate,
+	}
+
+	if err := messageService.UpdateMessageById(updatedMessage); err != nil {
+		errorMessage := fmt.Sprintf("Update Message Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/updateMessage", "Error happened while updating message!"))
+	}
+	return c.SendStatus(http.StatusOK)
 }
 
 // UpdateMessageHandle handle create a new vang
-func UpdateReadMessageHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func UpdateReadMessageHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// Create the model object
-		var model models.UpdateReadMessageModel
-		if err := json.Unmarshal(req.Body, &model); err != nil {
-			log.Error("Unmarshal model models.UpdateReadMessageModel %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		// Create service
-		roomService, serviceErr := service.NewRoomService(db)
-		if serviceErr != nil {
-			log.Error("Room service %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		if err := roomService.UpdateMemberRead(model.RoomId, req.UserID, model.Amount, model.MessageCreatedDate); err != nil {
-			errorMessage := fmt.Sprintf("Update Message Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("updateMemberReadError", errorMessage)}, nil
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create the model object
+	model := new(models.UpdateReadMessageModel)
+	if err := c.BodyParser(model); err != nil {
+		errorMessage := fmt.Sprintf("Parse UpdateReadMessageModel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/parseModel", "Error happened while parsing model!"))
 	}
+
+	// Create service
+	roomService, serviceErr := service.NewRoomService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewRoomService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/roomService", "Error happened while creating roomService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[UpdateReadMessageHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := roomService.UpdateMemberRead(model.RoomId, currentUser.UserID, model.Amount, model.MessageCreatedDate); err != nil {
+		errorMessage := fmt.Sprintf("Update Message Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/updateMessage", "Error happened while updating message!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
 }

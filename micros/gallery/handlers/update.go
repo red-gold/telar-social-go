@@ -1,63 +1,71 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/gofiber/fiber/v2"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/gallery/database"
 	domain "github.com/red-gold/ts-serverless/micros/gallery/dto"
 	models "github.com/red-gold/ts-serverless/micros/gallery/models"
 	service "github.com/red-gold/ts-serverless/micros/gallery/services"
 )
 
 // UpdateMediaHandle handle create a new media
-func UpdateMediaHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func UpdateMediaHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// Create the model object
-		var model models.MediaModel
-		if err := json.Unmarshal(req.Body, &model); err != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, err
-		}
-
-		// Create service
-		mediaService, serviceErr := service.NewMediaService(db)
-		if serviceErr != nil {
-			return handler.Response{StatusCode: http.StatusInternalServerError}, serviceErr
-		}
-
-		updatedMedia := &domain.Media{
-			ObjectId:       model.ObjectId,
-			DeletedDate:    0,
-			CreatedDate:    model.CreatedDate,
-			Thumbnail:      model.Thumbnail,
-			URL:            model.URL,
-			FullPath:       model.FullPath,
-			Caption:        model.Caption,
-			FileName:       model.FileName,
-			Directory:      model.Directory,
-			OwnerUserId:    req.UserID,
-			LastUpdated:    utils.UTCNowUnix(),
-			AlbumId:        model.AlbumId,
-			Width:          model.Width,
-			Height:         model.Height,
-			Meta:           model.Meta,
-			AccessUserList: model.AccessUserList,
-			Permission:     model.Permission,
-			Deleted:        model.Deleted,
-		}
-
-		if err := mediaService.UpdateMediaById(updatedMedia); err != nil {
-			errorMessage := fmt.Sprintf("Update Media Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("updateMediaError", errorMessage)}, nil
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// Create the model object
+	model := new(models.MediaModel)
+	if err := c.BodyParser(model); err != nil {
+		errorMessage := fmt.Sprintf("Parse MediaModel Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/parseModel", "Error happened while parsing model!"))
 	}
+
+	// Create service
+	mediaService, serviceErr := service.NewMediaService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewMediaService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/mediaService", "Error happened while creating mediaService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[UpdateMediaHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	updatedMedia := &domain.Media{
+		ObjectId:       model.ObjectId,
+		DeletedDate:    0,
+		CreatedDate:    model.CreatedDate,
+		Thumbnail:      model.Thumbnail,
+		URL:            model.URL,
+		FullPath:       model.FullPath,
+		Caption:        model.Caption,
+		FileName:       model.FileName,
+		Directory:      model.Directory,
+		OwnerUserId:    currentUser.UserID,
+		LastUpdated:    utils.UTCNowUnix(),
+		AlbumId:        model.AlbumId,
+		Width:          model.Width,
+		Height:         model.Height,
+		Meta:           model.Meta,
+		AccessUserList: model.AccessUserList,
+		Permission:     model.Permission,
+		Deleted:        model.Deleted,
+	}
+
+	if err := mediaService.UpdateMediaById(updatedMedia); err != nil {
+		errorMessage := fmt.Sprintf("Update Media Error %s", err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/updateMedia", "Error happened while update media!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
+
 }

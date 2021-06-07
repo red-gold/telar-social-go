@@ -4,47 +4,53 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gofiber/fiber/v2"
 	uuid "github.com/gofrs/uuid"
-	handler "github.com/openfaas-incubator/go-function-sdk"
-	server "github.com/red-gold/telar-core/server"
+	"github.com/red-gold/telar-core/pkg/log"
+	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
+	"github.com/red-gold/ts-serverless/micros/circles/database"
 	service "github.com/red-gold/ts-serverless/micros/circles/services"
 )
 
 // DeleteCircleHandle handle delete a circle
-func DeleteCircleHandle(db interface{}) func(server.Request) (handler.Response, error) {
+func DeleteCircleHandle(c *fiber.Ctx) error {
 
-	return func(req server.Request) (handler.Response, error) {
-
-		// params from /circles/:circleId
-		circleId := req.GetParamByName("circleId")
-		if circleId == "" {
-			errorMessage := fmt.Sprintf("Circle Id is required!")
-			return handler.Response{StatusCode: http.StatusBadRequest, Body: utils.MarshalError("circleIdRequired", errorMessage)}, nil
-		}
-		fmt.Printf("\n Circle ID: %s", circleId)
-		circleUUID, uuidErr := uuid.FromString(circleId)
-		if uuidErr != nil {
-			errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("uuidError", errorMessage)}, nil
-		}
-		fmt.Printf("\n Circle UUID: %s", circleUUID)
-		// Create service
-		circleService, serviceErr := service.NewCircleService(db)
-		if serviceErr != nil {
-			errorMessage := fmt.Sprintf("Circle Service Error %s", serviceErr.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("circleServiceError", errorMessage)}, nil
-
-		}
-
-		if err := circleService.DeleteCircleByOwner(req.UserID, circleUUID); err != nil {
-			errorMessage := fmt.Sprintf("Delete Circle Error %s", err.Error())
-			return handler.Response{StatusCode: http.StatusInternalServerError, Body: utils.MarshalError("deleteCircleError", errorMessage)}, nil
-
-		}
-		return handler.Response{
-			Body:       []byte(`{"success": true}`),
-			StatusCode: http.StatusOK,
-		}, nil
+	// params from /circles/:circleId
+	circleId := c.Params("circleId")
+	if circleId == "" {
+		errorMessage := fmt.Sprintf("Circle Id is required!")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("circleIdRequired", errorMessage))
 	}
+
+	circleUUID, uuidErr := uuid.FromString(circleId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("circleIdIsNotValid", "Circle id is not valid!"))
+
+	}
+
+	// Create service
+	circleService, serviceErr := service.NewCircleService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewCircleService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/circleService", "Error happened while creating circleService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[DeleteCircleHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	if err := circleService.DeleteCircleByOwner(currentUser.UserID, circleUUID); err != nil {
+		errorMessage := fmt.Sprintf("Delete Circle Error %s - %s", circleUUID.String(), err.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("deleteCircle", "Can not delete circle!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
 }

@@ -9,6 +9,7 @@ import (
 	repo "github.com/red-gold/telar-core/data"
 	"github.com/red-gold/telar-core/data/mongodb"
 	mongoRepo "github.com/red-gold/telar-core/data/mongodb"
+	"github.com/red-gold/telar-core/pkg/log"
 	"github.com/red-gold/telar-core/utils"
 	dto "github.com/red-gold/ts-serverless/micros/user-rels/dto"
 )
@@ -89,6 +90,97 @@ func (s UserRelServiceImpl) FindUserRelList(filter interface{}, limit int64, ski
 	}
 
 	return userRelList, nil
+}
+
+// FindRelsIncludeProfile get all user relations by filter including user profile entity
+func (s UserRelServiceImpl) FindRelsIncludeProfile(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.UserRel, error) {
+	var pipeline []interface{}
+
+	matchOperator := make(map[string]interface{})
+	matchOperator["$match"] = filter
+
+	sortOperator := make(map[string]interface{})
+	sortOperator["$sort"] = sort
+
+	pipeline = append(pipeline, matchOperator, sortOperator)
+
+	if skip > 0 {
+		skipOperator := make(map[string]interface{})
+		skipOperator["$skip"] = skip
+		pipeline = append(pipeline, skipOperator)
+	}
+
+	if limit > 0 {
+		limitOperator := make(map[string]interface{})
+		limitOperator["$limit"] = limit
+		pipeline = append(pipeline, limitOperator)
+	}
+
+	// Add left user pipeline
+	lookupLeftUser := make(map[string]map[string]string)
+	lookupLeftUser["$lookup"] = map[string]string{
+		"localField":   "leftId",
+		"from":         "userProfile",
+		"foreignField": "objectId",
+		"as":           "leftUser",
+	}
+
+	unwindLeftUser := make(map[string]interface{})
+	unwindLeftUser["$unwind"] = "$leftUser"
+	pipeline = append(pipeline, lookupLeftUser, unwindLeftUser)
+
+	// Add right user pipeline
+	lookupRightUser := make(map[string]map[string]string)
+	lookupRightUser["$lookup"] = map[string]string{
+		"localField":   "rightId",
+		"from":         "userProfile",
+		"foreignField": "objectId",
+		"as":           "rightUser",
+	}
+
+	unwindRightUser := make(map[string]interface{})
+	unwindRightUser["$unwind"] = "$rightUser"
+	pipeline = append(pipeline, lookupRightUser, unwindRightUser)
+	log.Info("pipeline %v", pipeline)
+
+	projectOperator := make(map[string]interface{})
+	project := make(map[string]interface{})
+
+	project["objectId"] = 1
+	project["created_date"] = 1
+	project["leftId"] = 1
+	project["rightId"] = 1
+	project["left.userId"] = "$leftId"
+	project["left.fullName"] = "$leftUser.fullName"
+	project["left.avatar"] = "$leftUser.avatar"
+	project["right.userId"] = "$rightId"
+	project["right.fullName"] = "$rightUser.fullName"
+	project["right.avatar"] = "$rightUser.avatar"
+	project["rel"] = 1
+	project["tags"] = 1
+	project["circleIds"] = 1
+
+	projectOperator["$project"] = project
+
+	pipeline = append(pipeline, projectOperator)
+
+	result := <-s.UserRelRepo.Aggregate(userRelCollectionName, pipeline)
+
+	defer result.Close()
+	if result.Error() != nil {
+		return nil, result.Error()
+	}
+	var postList []dto.UserRel
+	for result.Next() {
+		var post dto.UserRel
+		errDecode := result.Decode(&post)
+		if errDecode != nil {
+			return nil, fmt.Errorf("Error docoding on dto.UserRel")
+		}
+		postList = append(postList, post)
+	}
+
+	return postList, nil
 }
 
 // QueryUserRel get all userRels by query
@@ -210,7 +302,7 @@ func (s UserRelServiceImpl) GetFollowers(userId uuid.UUID) ([]dto.UserRel, error
 	}{
 		RightId: userId,
 	}
-	return s.FindUserRelList(filter, 0, 0, sortMap)
+	return s.FindRelsIncludeProfile(filter, 0, 0, sortMap)
 }
 
 // GetFollowers Get user's following by userId
@@ -222,11 +314,11 @@ func (s UserRelServiceImpl) GetFollowing(userId uuid.UUID) ([]dto.UserRel, error
 	}{
 		LeftId: userId,
 	}
-	return s.FindUserRelList(filter, 0, 0, sortMap)
+	return s.FindRelsIncludeProfile(filter, 0, 0, sortMap)
 }
 
 // FollowUser create relation between two users
-func (s UserRelServiceImpl) FollowUser(leftUser dto.UserRelMeta, rightUser dto.UserRelMeta, circleIds []string) error {
+func (s UserRelServiceImpl) FollowUser(leftUser dto.UserRelMeta, rightUser dto.UserRelMeta, circleIds []string, tags []string) error {
 
 	newUserRel := &dto.UserRel{
 		Left:      leftUser,
@@ -235,6 +327,7 @@ func (s UserRelServiceImpl) FollowUser(leftUser dto.UserRelMeta, rightUser dto.U
 		RightId:   rightUser.UserId,
 		Rel:       []string{leftUser.UserId.String(), rightUser.UserId.String()},
 		CircleIds: circleIds,
+		Tags:      tags,
 	}
 	err := s.SaveUserRel(newUserRel)
 	return err
