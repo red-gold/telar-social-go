@@ -9,5 +9,5 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/red-gold/telar-core v0.1.12
 	github.com/red-gold/telar-web/micros/notifications v0.0.0-20210228035214-84737143b022
-	github.com/red-gold/ts-serverless v0.1.27
+	github.com/red-gold/ts-serverless v0.1.29
 )

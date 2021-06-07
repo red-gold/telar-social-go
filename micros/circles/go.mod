@@ -7,5 +7,5 @@ require (
 	github.com/gofiber/fiber/v2 v2.10.0
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/red-gold/telar-core v0.1.12
-	github.com/red-gold/ts-serverless v0.1.27
+	github.com/red-gold/ts-serverless v0.1.29
 )
