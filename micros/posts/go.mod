@@ -9,5 +9,5 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/red-gold/telar-core v0.1.16
 	github.com/red-gold/telar-web v0.1.65
-	github.com/red-gold/ts-serverless v0.1.29
+	github.com/red-gold/ts-serverless v0.1.31
 )

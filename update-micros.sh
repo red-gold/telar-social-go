@@ -40,7 +40,7 @@ do
 echo -e "$BYellow"
 microPath="$DIR/micros/$i"
 echo "Updating [ts-serverless] module in $microPath"
-cd "$microPath" && go get github.com/red-gold/ts-serverless@v0.1.29 && go mod tidy
+cd "$microPath" && go get github.com/red-gold/ts-serverless@v0.1.31 && go mod tidy
 echo "[ts-serverless] module updated for $i"
 done
 echo -e "$Black"
