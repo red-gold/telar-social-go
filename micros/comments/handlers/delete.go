@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -66,8 +67,16 @@ func DeleteCommentHandle(c *fiber.Ctx) error {
 	userHeaders["displayName"] = []string{currentUser.DisplayName}
 	userHeaders["role"] = []string{currentUser.SystemRole}
 
-	postIndexURL := fmt.Sprintf("/posts/comment/-1/%s", postId)
-	_, commentDecreaseRes := functionCall(http.MethodPut, []byte(""), postIndexURL, userHeaders)
+	postCommentURL := "/posts/comment/count"
+	payload, err := json.Marshal(fiber.Map{
+		"postId": postId,
+		"count":  -1,
+	})
+	if err != nil {
+		messageError := fmt.Sprintf("Can not parse comment count payload: %s", err.Error())
+		log.Error(messageError)
+	}
+	_, commentDecreaseRes := functionCall(http.MethodPut, payload, postCommentURL, userHeaders)
 
 	if commentDecreaseRes != nil {
 		log.Error("Cannot save vote on post! error: %s", commentDecreaseRes.Error())

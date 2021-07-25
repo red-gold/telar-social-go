@@ -9,12 +9,13 @@ type PostModel struct {
 	ObjectId         uuid.UUID                     `json:"objectId" bson:"objectId"`
 	PostTypeId       int                           `json:"postTypeId" bson:"postTypeId"`
 	Score            int64                         `json:"score" bson:"score"`
-	Votes            map[string]bool               `json:"votes" bson:"votes"`
+	Votes            map[string]string             `json:"votes" bson:"votes"`
 	ViewCount        int64                         `json:"viewCount" bson:"viewCount"`
 	Body             string                        `json:"body" bson:"body"`
 	OwnerUserId      uuid.UUID                     `json:"ownerUserId" bson:"ownerUserId"`
 	OwnerDisplayName string                        `json:"ownerDisplayName" bson:"ownerDisplayName"`
 	OwnerAvatar      string                        `json:"ownerAvatar" bson:"ownerAvatar"`
+	URLKey           string                        `json:"urlKey" bson:"urlKey"`
 	Tags             []string                      `json:"tags" bson:"tags"`
 	CommentCounter   int64                         `json:"commentCounter" bson:"commentCounter"`
 	Image            string                        `json:"image" bson:"image"`

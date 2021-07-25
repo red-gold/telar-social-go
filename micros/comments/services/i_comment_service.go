@@ -7,7 +7,7 @@ import (
 )
 
 type CommentService interface {
-	SaveComment(comment *dto.Comment) error
+	SaveComment(comment *dto.Comment) <-chan SaveResultAsync
 	FindOneComment(filter interface{}) (*dto.Comment, error)
 	FindCommentList(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.Comment, error)
 	QueryComment(search string, ownerUserId *uuid.UUID, commentTypeId *int, sortBy string, page int64) ([]dto.Comment, error)

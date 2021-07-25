@@ -7,7 +7,7 @@ import (
 )
 
 type VoteService interface {
-	SaveVote(vote *dto.Vote) error
+	SaveVote(vote *dto.Vote) <-chan SaveResultAsync
 	FindOneVote(filter interface{}) (*dto.Vote, error)
 	FindVoteList(filter interface{}, limit int64, skip int64, sort map[string]int) ([]dto.Vote, error)
 	FindById(objectId uuid.UUID) (*dto.Vote, error)

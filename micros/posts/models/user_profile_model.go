@@ -14,7 +14,6 @@ type UserProfileModel struct {
 	TagLine        string                        `json:"tagLine" bson:"tagLine"`
 	CreatedDate    int64                         `json:"created_date" bson:"created_date"`
 	LastUpdated    int64                         `json:"last_updated" bson:"last_updated"`
-	LastSeen       int64                         `json:"lastSeen" bson:"lastSeen"`
 	Email          string                        `json:"email" bson:"email"`
 	Birthday       int64                         `json:"birthday" bson:"birthday"`
 	WebUrl         string                        `json:"webUrl" bson:"webUrl"`

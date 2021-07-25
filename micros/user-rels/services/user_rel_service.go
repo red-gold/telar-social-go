@@ -146,19 +146,36 @@ func (s UserRelServiceImpl) FindRelsIncludeProfile(filter interface{}, limit int
 	projectOperator := make(map[string]interface{})
 	project := make(map[string]interface{})
 
+	// Add project operator
 	project["objectId"] = 1
 	project["created_date"] = 1
 	project["leftId"] = 1
 	project["rightId"] = 1
-	project["left.userId"] = "$leftId"
-	project["left.fullName"] = "$leftUser.fullName"
-	project["left.avatar"] = "$leftUser.avatar"
-	project["right.userId"] = "$rightId"
-	project["right.fullName"] = "$rightUser.fullName"
-	project["right.avatar"] = "$rightUser.avatar"
 	project["rel"] = 1
 	project["tags"] = 1
 	project["circleIds"] = 1
+	// left user
+	project["left.userId"] = "$leftId"
+	project["left.fullName"] = "$leftUser.fullName"
+	project["left.instagramId"] = "$leftUser.instagramId"
+	project["left.twitterId"] = "$leftUser.twitterId"
+	project["left.linkedInId"] = "$leftUser.linkedInId"
+	project["left.facebookId"] = "$leftUser.facebookId"
+	project["left.socialName"] = "$leftUser.socialName"
+	project["left.created_date"] = "$leftUser.created_date"
+	project["left.banner"] = "$leftUser.banner"
+	project["left.avatar"] = "$leftUser.avatar"
+	// Right user
+	project["right.userId"] = "$rightId"
+	project["right.fullName"] = "$rightUser.fullName"
+	project["right.instagramId"] = "$rightUser.instagramId"
+	project["right.twitterId"] = "$rightUser.twitterId"
+	project["right.linkedInId"] = "$rightUser.linkedInId"
+	project["right.facebookId"] = "$rightUser.facebookId"
+	project["right.socialName"] = "$rightUser.socialName"
+	project["right.created_date"] = "$rightUser.created_date"
+	project["right.banner"] = "$rightUser.banner"
+	project["right.avatar"] = "$rightUser.avatar"
 
 	projectOperator["$project"] = project
 
@@ -305,7 +322,7 @@ func (s UserRelServiceImpl) GetFollowers(userId uuid.UUID) ([]dto.UserRel, error
 	return s.FindRelsIncludeProfile(filter, 0, 0, sortMap)
 }
 
-// GetFollowers Get user's following by userId
+// GetFollowing Get user's following by userId
 func (s UserRelServiceImpl) GetFollowing(userId uuid.UUID) ([]dto.UserRel, error) {
 	sortMap := make(map[string]int)
 	sortMap["created_date"] = -1

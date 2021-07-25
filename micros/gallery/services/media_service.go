@@ -254,13 +254,13 @@ func (s MediaServiceImpl) QueryAlbum(ownerUserId uuid.UUID, albumId *uuid.UUID, 
 	sortMap := make(map[string]int)
 	sortMap[sortBy] = -1
 	skip := numberOfItems * (page - 1)
-	filter := struct {
-		OwnerUserId uuid.UUID `json:"ownerUserId" bson:"ownerUserId"`
-		AlbumId     uuid.UUID `json:"albumId" bson:"albumId"`
-	}{
-		OwnerUserId: ownerUserId,
-		AlbumId:     *albumId,
+
+	filter := make(map[string]interface{})
+	filter["ownerUserId"] = ownerUserId
+	if albumId != nil {
+		filter["albumId"] = *albumId
 	}
+
 	return s.FindMediaList(filter, limit, skip, sortMap)
 }
 

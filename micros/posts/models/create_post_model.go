@@ -15,6 +15,7 @@ type CreatePostModel struct {
 	OwnerUserId      uuid.UUID                     `json:"ownerUserId"`
 	OwnerDisplayName string                        `json:"ownerDisplayName"`
 	OwnerAvatar      string                        `json:"ownerAvatar"`
+	URLKey           string                        `json:"urlKey"`
 	Tags             []string                      `json:"tags"`
 	CommentCounter   int64                         `json:"commentCounter"`
 	Image            string                        `json:"image"`

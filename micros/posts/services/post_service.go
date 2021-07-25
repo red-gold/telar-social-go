@@ -9,8 +9,10 @@ import (
 	repo "github.com/red-gold/telar-core/data"
 	"github.com/red-gold/telar-core/data/mongodb"
 	mongoRepo "github.com/red-gold/telar-core/data/mongodb"
+	"github.com/red-gold/telar-core/pkg/log"
 	"github.com/red-gold/telar-core/utils"
 	dto "github.com/red-gold/ts-serverless/micros/posts/dto"
+	"github.com/red-gold/ts-serverless/micros/posts/models"
 )
 
 // PostService handlers with injected dependencies
@@ -180,7 +182,7 @@ func (s PostServiceImpl) FindPostsIncludeProfile(filter interface{}, limit int64
 }
 
 // QueryPost get all posts by query
-func (s PostServiceImpl) QueryPost(search string, ownerUserIds []uuid.UUID, postTypeId *int, sortBy string, page int64) ([]dto.Post, error) {
+func (s PostServiceImpl) QueryPost(search string, ownerUserIds []uuid.UUID, postTypeId int, sortBy string, page int64) ([]dto.Post, error) {
 	sortMap := make(map[string]int)
 	sortMap[sortBy] = -1
 	skip := numberOfItems * (page - 1)
@@ -190,13 +192,13 @@ func (s PostServiceImpl) QueryPost(search string, ownerUserIds []uuid.UUID, post
 	if search != "" {
 		filter["$text"] = coreData.SearchOperator{Search: search}
 	}
-	if ownerUserIds != nil {
+	if ownerUserIds != nil && len(ownerUserIds) > 0 {
 		inFilter := make(map[string]interface{})
 		inFilter["$in"] = ownerUserIds
 		filter["ownerUserId"] = inFilter
 	}
-	if postTypeId != nil {
-		filter["postTypeId"] = *postTypeId
+	if postTypeId > 0 {
+		filter["postTypeId"] = postTypeId
 	}
 	fmt.Println(filter)
 	result, err := s.FindPostList(filter, limit, skip, sortMap)
@@ -205,7 +207,7 @@ func (s PostServiceImpl) QueryPost(search string, ownerUserIds []uuid.UUID, post
 }
 
 // QueryPostIncludeUser get all posts by query including user entity
-func (s PostServiceImpl) QueryPostIncludeUser(search string, ownerUserIds []uuid.UUID, postTypeId *int, sortBy string, page int64) ([]dto.Post, error) {
+func (s PostServiceImpl) QueryPostIncludeUser(search string, ownerUserIds []uuid.UUID, postTypeId int, sortBy string, page int64) ([]dto.Post, error) {
 	sortMap := make(map[string]int)
 	sortMap[sortBy] = -1
 	skip := numberOfItems * (page - 1)
@@ -215,13 +217,13 @@ func (s PostServiceImpl) QueryPostIncludeUser(search string, ownerUserIds []uuid
 	if search != "" {
 		filter["$text"] = coreData.SearchOperator{Search: search}
 	}
-	if ownerUserIds != nil {
+	if ownerUserIds != nil && len(ownerUserIds) > 0 {
 		inFilter := make(map[string]interface{})
 		inFilter["$in"] = ownerUserIds
 		filter["ownerUserId"] = inFilter
 	}
-	if postTypeId != nil {
-		filter["postTypeId"] = *postTypeId
+	if postTypeId > 0 {
+		filter["postTypeId"] = postTypeId
 	}
 
 	result, err := s.FindPostsIncludeProfile(filter, limit, skip, sortMap)
@@ -252,6 +254,17 @@ func (s PostServiceImpl) FindById(objectId uuid.UUID) (*dto.Post, error) {
 	return s.FindOnePost(filter)
 }
 
+// FindByURLKey find by URL key
+func (s PostServiceImpl) FindByURLKey(urlKey string) (*dto.Post, error) {
+
+	filter := struct {
+		URLKey string `json:"urlKey" bson:"urlKey"`
+	}{
+		URLKey: urlKey,
+	}
+	return s.FindOnePost(filter)
+}
+
 // UpdatePost update the post
 func (s PostServiceImpl) UpdatePost(filter interface{}, data interface{}, opts ...*coreData.UpdateOptions) error {
 
@@ -273,7 +286,7 @@ func (s PostServiceImpl) UpdateManyPost(filter interface{}, data interface{}, op
 }
 
 // UpdatePost update the post
-func (s PostServiceImpl) UpdatePostById(data *dto.Post) error {
+func (s PostServiceImpl) UpdatePostById(data *models.PostUpdateModel) error {
 	filter := struct {
 		ObjectId    uuid.UUID `json:"objectId" bson:"objectId"`
 		OwnerUserId uuid.UUID `json:"ownerUserId" bson:"ownerUserId"`
@@ -337,7 +350,7 @@ func (s PostServiceImpl) CreatePostIndex(indexes map[string]interface{}) error {
 }
 
 // IncrementScoreCount increment score of post
-func (s PostServiceImpl) IncrementScoreCount(objectId uuid.UUID, ownerUserId uuid.UUID) error {
+func (s PostServiceImpl) IncrementScoreCount(objectId uuid.UUID, ownerUserId uuid.UUID, avatar string) error {
 	filter := struct {
 		ObjectId uuid.UUID `json:"objectId" bson:"objectId"`
 	}{
@@ -346,7 +359,8 @@ func (s PostServiceImpl) IncrementScoreCount(objectId uuid.UUID, ownerUserId uui
 
 	data := make(map[string]interface{})
 	targetField := fmt.Sprintf("votes.%s", ownerUserId.String())
-	data[targetField] = true
+	log.Info("IncrementScoreCount %v - %v - %v ", targetField, objectId, avatar)
+	data[targetField] = avatar
 	updateOperator := coreData.UpdateOperator{
 		Set: data,
 	}
@@ -366,13 +380,53 @@ func (s PostServiceImpl) DecrementScoreCount(objectId uuid.UUID, ownerUserId uui
 
 	data := make(map[string]interface{})
 	targetField := fmt.Sprintf("votes.%s", ownerUserId.String())
-	data[targetField] = false
+	data[targetField] = nil
 	updateOperator := coreData.UpdateOperator{
 		Set: data,
 	}
 	options := &coreData.UpdateOptions{}
 	options.SetUpsert(true)
 	return s.UpdatePost(filter, updateOperator, options)
+}
+
+// DisableCommnet
+func (s PostServiceImpl) DisableCommnet(OwnerUserId uuid.UUID, objectId uuid.UUID, value bool) error {
+
+	filter := struct {
+		ObjectId    uuid.UUID `json:"objectId" bson:"objectId"`
+		OwnerUserId uuid.UUID `json:"ownerUserId" bson:"ownerUserId"`
+	}{
+		ObjectId:    objectId,
+		OwnerUserId: OwnerUserId,
+	}
+
+	data := make(map[string]interface{})
+	data["disableComments"] = value
+
+	incOperator := coreData.UpdateOperator{
+		Set: data,
+	}
+	return s.UpdatePost(filter, incOperator)
+}
+
+// DisableSharing
+func (s PostServiceImpl) DisableSharing(OwnerUserId uuid.UUID, objectId uuid.UUID, value bool) error {
+
+	filter := struct {
+		ObjectId    uuid.UUID `json:"objectId" bson:"objectId"`
+		OwnerUserId uuid.UUID `json:"ownerUserId" bson:"ownerUserId"`
+	}{
+		ObjectId:    objectId,
+		OwnerUserId: OwnerUserId,
+	}
+
+	data := make(map[string]interface{})
+	data["disableSharing"] = value
+
+	incOperator := coreData.UpdateOperator{
+		Set: data,
+	}
+	return s.UpdatePost(filter, incOperator)
 }
 
 // Increment increment a post field
@@ -417,6 +471,30 @@ func (s PostServiceImpl) UpdatePostProfile(ownerUserId uuid.UUID, ownerDisplayNa
 	}{
 		OwnerDisplayName: ownerDisplayName,
 		OwnerAvatar:      ownerAvatar,
+	}
+
+	updateOperator := coreData.UpdateOperator{
+		Set: data,
+	}
+	err := s.UpdateManyPost(filter, updateOperator)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdatePostURLKey update the post URL key
+func (s PostServiceImpl) UpdatePostURLKey(postId uuid.UUID, urlKey string) error {
+	filter := struct {
+		ObjectId uuid.UUID `json:"objectId" bson:"objectId"`
+	}{
+		ObjectId: postId,
+	}
+
+	data := struct {
+		URLKey string `json:"urlKey" bson:"urlKey"`
+	}{
+		URLKey: urlKey,
 	}
 
 	updateOperator := coreData.UpdateOperator{

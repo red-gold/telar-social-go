@@ -35,23 +35,26 @@ func NewVoteService(db interface{}) (VoteService, error) {
 }
 
 // SaveVote save the vote
-func (s VoteServiceImpl) SaveVote(vote *dto.Vote) error {
-
-	if vote.ObjectId == uuid.Nil {
-		var uuidErr error
-		vote.ObjectId, uuidErr = uuid.NewV4()
-		if uuidErr != nil {
-			return uuidErr
+func (s VoteServiceImpl) SaveVote(vote *dto.Vote) <-chan SaveResultAsync {
+	r := make(chan SaveResultAsync)
+	go func() {
+		defer close(r)
+		if vote.ObjectId == uuid.Nil {
+			vote.ObjectId = uuid.Must(uuid.NewV4())
 		}
-	}
 
-	if vote.CreatedDate == 0 {
-		vote.CreatedDate = utils.UTCNowUnix()
-	}
+		if vote.CreatedDate == 0 {
+			vote.CreatedDate = utils.UTCNowUnix()
+		}
 
-	result := <-s.VoteRepo.Save(voteCollectionName, vote)
-
-	return result.Error
+		result := <-s.VoteRepo.Save(voteCollectionName, vote)
+		if result.Error != nil {
+			r <- SaveResultAsync{Error: result.Error}
+			return
+		}
+		r <- SaveResultAsync{}
+	}()
+	return r
 }
 
 // FindOneVote get one vote

@@ -102,8 +102,10 @@ github.com/plivo/plivo-go v5.5.1+incompatible/go.mod h1:OhnI9crdl6O+D94Lp1lvuwJo
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/red-gold/telar-core v0.1.10/go.mod h1:JdeL5OLMsNUspxjoxM4b7DDmiEDHj9MRZuuw8QO8ui4=
-github.com/red-gold/telar-core v0.1.12 h1:PNe6BATqaywY7FSjHTEhTv2wEx0qGpNTtbSGgNooI/M=
-github.com/red-gold/telar-core v0.1.12/go.mod h1:bmkWWp5lamNBfLvQVAFeEmUQ3dJ1SFD+6l0lUJvMbpA=
+github.com/red-gold/telar-core v0.1.16 h1:qqhNBP5R+DpqtAsTjYU7CFfV4JVSXD3dZZASYOdrSVg=
+github.com/red-gold/telar-core v0.1.16/go.mod h1:bmkWWp5lamNBfLvQVAFeEmUQ3dJ1SFD+6l0lUJvMbpA=
+github.com/red-gold/telar-web v0.1.65 h1:3EemjUFCR6CqzMG1JXac7MyEcqsCrC5o35gEXk72DcM=
+github.com/red-gold/telar-web v0.1.65/go.mod h1:D3qFm5+cU5XWmlmRbms2LfkXgnM4sy4EJmeOTlYsyFg=
 github.com/red-gold/ts-serverless v0.1.29 h1:i9CoTUHppIJErmZFuhNo2cOGm5ZBzCL4U5hig9pfaS8=
 github.com/red-gold/ts-serverless v0.1.29/go.mod h1:J/60CaiVd81lYAxTSiwMOb0Db0FppG+Lyo87U1rcYAM=
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
@@ -177,6 +179,7 @@ golang.org/x/sys v0.0.0-20191026070338-33540a1f6037/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200116001909-b77594299b42/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210223095934-7937bea0104d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210225134936-a50acf3fe073/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210423082822-04245dca01da/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210514084401-e8d321eab015/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

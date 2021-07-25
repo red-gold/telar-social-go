@@ -8,7 +8,6 @@ import (
 	"github.com/red-gold/telar-core/pkg/log"
 	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
-	"github.com/red-gold/ts-serverless/constants"
 	"github.com/red-gold/ts-serverless/micros/posts/database"
 	domain "github.com/red-gold/ts-serverless/micros/posts/dto"
 	models "github.com/red-gold/ts-serverless/micros/posts/models"
@@ -33,7 +32,8 @@ func CreatePostHandle(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/postService", "Error happened while creating postService!"))
 	}
 	var newAlbum *domain.PostAlbum = nil
-	if model.PostTypeId == constants.PostConstAlbum.Parse() || model.PostTypeId == constants.PostConstPhotoGallery.Parse() {
+
+	if len(model.Album.Photos) > 0 {
 		newAlbum = &domain.PostAlbum{
 			Count:   model.Album.Count,
 			Cover:   model.Album.Cover,
@@ -55,11 +55,12 @@ func CreatePostHandle(c *fiber.Ctx) error {
 		PostTypeId:       model.PostTypeId,
 		OwnerUserId:      currentUser.UserID,
 		Score:            model.Score,
-		Votes:            make(map[string]bool),
+		Votes:            make(map[string]string),
 		ViewCount:        model.ViewCount,
 		Body:             model.Body,
 		OwnerDisplayName: currentUser.DisplayName,
 		OwnerAvatar:      currentUser.Avatar,
+		URLKey:           generatPostURLKey(currentUser.SocialName, model.Body, model.ObjectId.String()),
 		Tags:             model.Tags,
 		CommentCounter:   model.CommentCounter,
 		Image:            model.Image,

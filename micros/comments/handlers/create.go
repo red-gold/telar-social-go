@@ -10,7 +10,6 @@ import (
 	"github.com/red-gold/telar-core/pkg/log"
 	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
-	notificationsModels "github.com/red-gold/telar-web/micros/notifications/models"
 	"github.com/red-gold/ts-serverless/micros/comments/database"
 	domain "github.com/red-gold/ts-serverless/micros/comments/dto"
 	models "github.com/red-gold/ts-serverless/micros/comments/models"
@@ -22,6 +21,7 @@ type PostModelNotification struct {
 	OwnerUserId      uuid.UUID `json:"ownerUserId"`
 	OwnerDisplayName string    `json:"ownerDisplayName"`
 	OwnerAvatar      string    `json:"ownerAvatar"`
+	URLKey           string    `json:"urlKey"`
 }
 
 // CreateCommentHandle handle create a new comment
@@ -73,11 +73,21 @@ func CreateCommentHandle(c *fiber.Ctx) error {
 		CreatedDate:      utils.UTCNowUnix(),
 		LastUpdated:      0,
 	}
+	userInfoReq := getUserInfoReq(c)
 
-	if err := commentService.SaveComment(newComment); err != nil {
-		errorMessage := fmt.Sprintf("Save Comment Error %s", err.Error())
+	saveCommentChannel := commentService.SaveComment(newComment)
+	readPostChannel := readPostAsync(model.PostId, userInfoReq)
+
+	saveCommentResult, postResult := <-saveCommentChannel, <-readPostChannel
+	if saveCommentResult.Error != nil {
+		errorMessage := fmt.Sprintf("Save Comment Error %s", saveCommentResult.Error.Error())
 		log.Error(errorMessage)
 		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/saveComment", "Error happened while saving comment!"))
+	}
+
+	if postResult.Error != nil {
+		messageError := fmt.Sprintf("Cannot get the post! error: %s", postResult.Error.Error())
+		fmt.Println(messageError)
 	}
 
 	// Create user headers for http request
@@ -87,12 +97,19 @@ func CreateCommentHandle(c *fiber.Ctx) error {
 	userHeaders["avatar"] = []string{currentUser.Avatar}
 	userHeaders["displayName"] = []string{currentUser.DisplayName}
 	userHeaders["role"] = []string{currentUser.SystemRole}
-
 	// Create request to increase comment counter on post
 	go func() {
 
-		postCommentURL := fmt.Sprintf("/posts/comment/+1/%s", model.PostId)
-		_, postCommentErr := functionCall(http.MethodPut, []byte(""), postCommentURL, userHeaders)
+		postCommentURL := "/posts/comment/count"
+		payload, err := json.Marshal(fiber.Map{
+			"postId": model.PostId,
+			"count":  1,
+		})
+		if err != nil {
+			messageError := fmt.Sprintf("Can not parse comment count payload: %s", err.Error())
+			log.Error(messageError)
+		}
+		_, postCommentErr := functionCall(http.MethodPut, payload, postCommentURL, userHeaders)
 
 		if postCommentErr != nil {
 			messageError := fmt.Sprintf("Cannot save comment count on post! error: %s", postCommentErr.Error())
@@ -102,16 +119,9 @@ func CreateCommentHandle(c *fiber.Ctx) error {
 
 	// Create notification request
 	go func(currentUser types.UserContext) {
-		postURL := fmt.Sprintf("/posts/%s", model.PostId)
-		postBody, postErr := functionCall(http.MethodGet, []byte(""), postURL, userHeaders)
-
-		if postErr != nil {
-			messageError := fmt.Sprintf("Cannot get the post! error: %s", postErr.Error())
-			fmt.Println(messageError)
-		}
 
 		var post PostModelNotification
-		marshalErr := json.Unmarshal(postBody, &post)
+		marshalErr := json.Unmarshal(postResult.Result, &post)
 		if marshalErr != nil {
 			messageError := fmt.Sprintf("Cannot unmarshal the post! error: %s", marshalErr.Error())
 			fmt.Println(messageError)
@@ -121,12 +131,13 @@ func CreateCommentHandle(c *fiber.Ctx) error {
 			// Should not send notification if the owner of the comment is same as owner of post
 			return
 		}
-		URL := fmt.Sprintf("/%s/posts/%s", currentUser.UserID, model.PostId)
-		notificationModel := &notificationsModels.CreateNotificationModel{
+		URL := fmt.Sprintf("/posts/%s", post.URLKey)
+		notificationModel := &models.NotificationModel{
 			OwnerUserId:          currentUser.UserID,
 			OwnerDisplayName:     currentUser.DisplayName,
 			OwnerAvatar:          currentUser.Avatar,
-			Description:          fmt.Sprintf("%s commented on your post.", currentUser.DisplayName),
+			Title:                currentUser.DisplayName,
+			Description:          "commented on your post.",
 			URL:                  URL,
 			NotifyRecieverUserId: post.OwnerUserId,
 			TargetId:             model.PostId,

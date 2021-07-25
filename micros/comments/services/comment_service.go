@@ -35,23 +35,26 @@ func NewCommentService(db interface{}) (CommentService, error) {
 }
 
 // SaveComment save the comment
-func (s CommentServiceImpl) SaveComment(comment *dto.Comment) error {
-
-	if comment.ObjectId == uuid.Nil {
-		var uuidErr error
-		comment.ObjectId, uuidErr = uuid.NewV4()
-		if uuidErr != nil {
-			return uuidErr
+func (s CommentServiceImpl) SaveComment(comment *dto.Comment) <-chan SaveResultAsync {
+	r := make(chan SaveResultAsync)
+	go func() {
+		defer close(r)
+		if comment.ObjectId == uuid.Nil {
+			comment.ObjectId = uuid.Must(uuid.NewV4())
 		}
-	}
 
-	if comment.CreatedDate == 0 {
-		comment.CreatedDate = utils.UTCNowUnix()
-	}
+		if comment.CreatedDate == 0 {
+			comment.CreatedDate = utils.UTCNowUnix()
+		}
 
-	result := <-s.CommentRepo.Save(commentCollectionName, comment)
-
-	return result.Error
+		result := <-s.CommentRepo.Save(commentCollectionName, comment)
+		if result.Error != nil {
+			r <- SaveResultAsync{Error: result.Error}
+			return
+		}
+		r <- SaveResultAsync{}
+	}()
+	return r
 }
 
 // FindOneComment get one comment

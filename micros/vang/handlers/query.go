@@ -138,7 +138,7 @@ func GetUserRooms(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
 			"Can not get current user"))
 	}
-
+	log.Info("[GetUserRooms] Current USER %v ", currentUser)
 	userInfoInReq := &UserInfoInReq{
 		UserId:      currentUser.UserID,
 		Username:    currentUser.Username,

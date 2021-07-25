@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -104,11 +105,19 @@ func DeleteVoteByPostIdHandle(c *fiber.Ctx) error {
 	userHeaders["displayName"] = []string{currentUser.DisplayName}
 	userHeaders["role"] = []string{currentUser.SystemRole}
 
-	postDecreaseScoreURL := fmt.Sprintf("/posts/score/-1/%s", postId)
-	_, postDecreaseErr := functionCall(http.MethodPut, []byte(""), postDecreaseScoreURL, userHeaders)
+	fullURL := "/posts/score"
+	payload, err := json.Marshal(fiber.Map{
+		"postId": postId,
+		"count":  -1,
+	})
+	if err != nil {
+		messageError := fmt.Sprintf("Can not parse score payload: %s", err.Error())
+		log.Error(messageError)
+	}
 
-	if postDecreaseErr != nil {
-		log.Error("[DeleteVoteByPostIdHandle.functionCall] %s - %s", postDecreaseScoreURL, postDecreaseErr.Error())
+	_, functionErr := functionCall(http.MethodPut, payload, fullURL, userHeaders)
+	if functionErr != nil {
+		log.Error("[DeleteVoteByPostIdHandle.functionCall] %s - %s", fullURL, functionErr.Error())
 		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/postDecreaseScore", "Error happened while delete Vote!"))
 	}
 

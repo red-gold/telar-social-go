@@ -15,16 +15,20 @@ import (
 	"github.com/red-gold/telar-core/pkg/log"
 	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
-	notificationsModels "github.com/red-gold/telar-web/micros/notifications/models"
+	models "github.com/red-gold/ts-serverless/micros/user-rels/models"
 	socialModels "github.com/red-gold/ts-serverless/micros/user-rels/models"
 )
 
 type UserInfoInReq struct {
-	UserId      uuid.UUID `json:"userId"`
-	Username    string    `json:"username"`
-	Avatar      string    `json:"avatar"`
+	UserId      uuid.UUID `json:"uid"`
+	Username    string    `json:"email"`
 	DisplayName string    `json:"displayName"`
-	SystemRole  string    `json:"systemRole"`
+	SocialName  string    `json:"socialName"`
+	Avatar      string    `json:"avatar"`
+	Banner      string    `json:"banner"`
+	TagLine     string    `json:"tagLine"`
+	SystemRole  string    `json:"role"`
+	CreatedDate int64     `json:"createdDate"`
 }
 
 // getHeadersFromUserInfoReq
@@ -33,7 +37,10 @@ func getHeadersFromUserInfoReq(info *UserInfoInReq) map[string][]string {
 	userHeaders["uid"] = []string{info.UserId.String()}
 	userHeaders["email"] = []string{info.Username}
 	userHeaders["avatar"] = []string{info.Avatar}
+	userHeaders["banner"] = []string{info.Banner}
+	userHeaders["tagLine"] = []string{info.TagLine}
 	userHeaders["displayName"] = []string{info.DisplayName}
+	userHeaders["socialName"] = []string{info.SocialName}
 	userHeaders["role"] = []string{info.SystemRole}
 
 	return userHeaders
@@ -54,6 +61,11 @@ func getUserInfoReq(c *fiber.Ctx) *UserInfoInReq {
 	}
 	return userInfoInReq
 
+}
+
+// getHeaderInfoReq
+func getHeaderInfoReq(c *fiber.Ctx) map[string][]string {
+	return getHeadersFromUserInfoReq(getUserInfoReq(c))
 }
 
 // functionCall send request to another function/microservice using HMAC validation
@@ -140,11 +152,12 @@ func sendFollowNotification(model *socialModels.FollowModel, userInfoInReq *User
 	// Create user headers for http request
 	userHeaders := getHeadersFromUserInfoReq(userInfoInReq)
 
-	URL := fmt.Sprintf("/%s", userInfoInReq.UserId)
-	notificationModel := &notificationsModels.CreateNotificationModel{
+	URL := fmt.Sprintf("/@/%s", userInfoInReq.SocialName)
+	notificationModel := &models.NotificationModel{
 		OwnerUserId:          userInfoInReq.UserId,
 		OwnerDisplayName:     userInfoInReq.DisplayName,
 		OwnerAvatar:          userInfoInReq.Avatar,
+		Title:                userInfoInReq.DisplayName,
 		Description:          fmt.Sprintf("%s is following you.", userInfoInReq.DisplayName),
 		URL:                  URL,
 		NotifyRecieverUserId: model.RightUser.UserId,

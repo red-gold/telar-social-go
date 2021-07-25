@@ -1,11 +1,11 @@
-package dto
+package models
 
 import (
 	uuid "github.com/gofrs/uuid"
 	"github.com/red-gold/ts-serverless/constants"
 )
 
-type Post struct {
+type PostUpdateModel struct {
 	ObjectId         uuid.UUID                     `json:"objectId" bson:"objectId"`
 	PostTypeId       int                           `json:"postTypeId" bson:"postTypeId"`
 	Score            int64                         `json:"score" bson:"score"`
@@ -21,13 +21,9 @@ type Post struct {
 	ImageFullPath    string                        `json:"imageFullPath" bson:"imageFullPath"`
 	Video            string                        `json:"video" bson:"video"`
 	Thumbnail        string                        `json:"thumbnail" bson:"thumbnail"`
-	URLKey           string                        `json:"urlKey" bson:"urlKey"`
-	Album            *PostAlbum                    `json:"album" bson:"album"`
+	Album            *PostAlbumModel               `json:"album" bson:"album"`
 	DisableComments  bool                          `json:"disableComments" bson:"disableComments"`
 	DisableSharing   bool                          `json:"disableSharing" bson:"disableSharing"`
-	Deleted          bool                          `json:"deleted" bson:"deleted"`
-	DeletedDate      int64                         `json:"deletedDate" bson:"deletedDate"`
-	CreatedDate      int64                         `json:"created_date" bson:"created_date"`
 	LastUpdated      int64                         `json:"last_updated" bson:"last_updated"`
 	AccessUserList   []string                      `json:"accessUserList" bson:"accessUserList"`
 	Permission       constants.UserPermissionConst `json:"permission" bson:"permission"`

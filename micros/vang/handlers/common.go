@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/alexellis/hmac"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofrs/uuid"
 	coreConfig "github.com/red-gold/telar-core/config"
 	log "github.com/red-gold/telar-core/pkg/log"
@@ -28,6 +29,40 @@ type UserInfoInReq struct {
 	Avatar      string    `json:"avatar"`
 	DisplayName string    `json:"displayName"`
 	SystemRole  string    `json:"systemRole"`
+}
+
+// getHeadersFromUserInfoReq
+func getHeadersFromUserInfoReq(info *UserInfoInReq) map[string][]string {
+	userHeaders := make(map[string][]string)
+	userHeaders["uid"] = []string{info.UserId.String()}
+	userHeaders["email"] = []string{info.Username}
+	userHeaders["avatar"] = []string{info.Avatar}
+	userHeaders["displayName"] = []string{info.DisplayName}
+	userHeaders["role"] = []string{info.SystemRole}
+
+	return userHeaders
+}
+
+// getUserInfoReq
+func getUserInfoReqFromCurrentUser(currentUser types.UserContext) *UserInfoInReq {
+	userInfoInReq := &UserInfoInReq{
+		UserId:      currentUser.UserID,
+		Username:    currentUser.Username,
+		Avatar:      currentUser.Avatar,
+		DisplayName: currentUser.DisplayName,
+		SystemRole:  currentUser.SystemRole,
+	}
+	return userInfoInReq
+}
+
+// getUserInfoReq
+func getUserInfoReq(c *fiber.Ctx) *UserInfoInReq {
+	currentUser, ok := c.Locals("user").(types.UserContext)
+	if !ok {
+		return &UserInfoInReq{}
+	}
+	return getUserInfoReqFromCurrentUser(currentUser)
+
 }
 
 // functionCall send request to another function/microservice using HMAC validation
@@ -118,6 +153,26 @@ func getUserProfileByID(userID uuid.UUID) (*models.UserProfileModel, error) {
 	if err != nil {
 		log.Error("Unmarshal foundProfile -  %s", err.Error())
 		return nil, fmt.Errorf("getUserProfileByID/unmarshal")
+	}
+	return &foundProfile, nil
+}
+
+// getProfileBySocialName Get user profile by social name
+func getProfileBySocialName(socialName string) (*models.UserProfileModel, error) {
+	profileURL := fmt.Sprintf("/profile/social/%s", socialName)
+	foundProfileData, err := functionCall(http.MethodGet, []byte(""), profileURL, nil)
+	if err != nil {
+		if err == NotFoundHTTPStatusError {
+			return nil, nil
+		}
+		log.Error("functionCall (%s) -  %s", profileURL, err.Error())
+		return nil, fmt.Errorf("getProfileBySocialName/functionCall")
+	}
+	var foundProfile models.UserProfileModel
+	err = json.Unmarshal(foundProfileData, &foundProfile)
+	if err != nil {
+		log.Error("Unmarshal foundProfile -  %s", err.Error())
+		return nil, fmt.Errorf("getProfileBySocialName/unmarshal")
 	}
 	return &foundProfile, nil
 }

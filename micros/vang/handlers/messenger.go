@@ -16,9 +16,8 @@ import (
 )
 
 type SetActiveRoomPayload struct {
-	Room     models.RoomModel       `json:"room"`
-	Messages []models.MessageModel  `json:"messages"`
-	Users    map[string]interface{} `json:"users"`
+	Room  models.RoomModel       `json:"room"`
+	Users map[string]interface{} `json:"users"`
 }
 
 // ActivePeerRoom handle active peer room
@@ -38,31 +37,13 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
 			"Can not get current user"))
 	}
-	roomMemberIds := []string{currentUser.UserID.String(), model.PeerUserId.String()}
 
-	userInfoReq := &UserInfoInReq{
-		UserId:      currentUser.UserID,
-		Username:    currentUser.Username,
-		Avatar:      currentUser.Avatar,
-		DisplayName: currentUser.DisplayName,
-		SystemRole:  currentUser.SystemRole,
-	}
-
-	getProfilesModel := models.GetProfilesModel{
-		UserIds: roomMemberIds,
-	}
-
-	foundUserProfiles, getPeerUserErr := getProfilesByUserIds(getProfilesModel, userInfoReq)
-	if getPeerUserErr != nil {
-		errorMessage := fmt.Sprintf("Get profiles %s", getPeerUserErr.Error())
-		log.Error(errorMessage)
-		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/getProfiles", "Error happened while reading profiles!"))
-	}
-
-	if len(foundUserProfiles) != len(roomMemberIds) {
-		errorMessage := fmt.Sprintf("Could not find all profiles (%v)", roomMemberIds)
-		log.Error(errorMessage)
-		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/notFoundAllProfile", "Error happened while finding profiles!"))
+	// Get the participants profile
+	participantsProfile, roomMemberIds, err := getParticipantsProfile(&currentUser, model)
+	if err != nil {
+		log.Error("[ActivePeerRoom] Error while getting participants profile %s", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/getParticipantsProfile",
+			"Error while getting participants profile"))
 	}
 
 	// Create service
@@ -78,7 +59,6 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/findRoom", "Error happened while finding room!"))
 	}
 
-	var roomMessages []models.MessageModel
 	if room == nil {
 		readDateMap := make(map[string]int64)
 		readDateMap[roomMemberIds[0]] = 0
@@ -113,46 +93,6 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 			return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/saveRoom", "Error happened while saving room!"))
 		}
 		room = &newRoom
-	} else {
-		// Create service
-		messageService, serviceErr := service.NewMessageService(database.Db)
-		if serviceErr != nil {
-			log.Error("NewMessageService %s", serviceErr.Error())
-			return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/messageService", "Error happened while creating messageService!"))
-		}
-		lastMessages, getMessagesErr := messageService.GetMessageByRoomId(&room.ObjectId, "createdDate", 1, utils.UTCNowUnix(), 0)
-		if getMessagesErr != nil {
-			errorMessage := fmt.Sprintf("Vang get room messages %s", getMessagesErr.Error())
-			log.Error(errorMessage)
-			return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/getRoomMessages", "Error happened while reading messages room!"))
-		}
-
-		for _, v := range lastMessages {
-			parsedMessage := models.MessageModel{
-				ObjectId:    v.ObjectId,
-				OwnerUserId: v.OwnerUserId,
-				RoomId:      v.RoomId,
-				Text:        v.Text,
-				CreatedDate: v.CreatedDate,
-				UpdatedDate: v.UpdatedDate,
-			}
-			roomMessages = append(roomMessages, parsedMessage)
-		}
-	}
-
-	// Map user profiles
-	mappedUsers := make(map[string]interface{})
-	for _, v := range foundUserProfiles {
-		mappedUser := make(map[string]interface{})
-		mappedUser["userId"] = v.ObjectId
-		mappedUser["fullName"] = v.FullName
-		mappedUser["avatar"] = v.Avatar
-		mappedUser["banner"] = v.Banner
-		mappedUser["tagLine"] = v.TagLine
-		mappedUser["lastSeen"] = v.LastSeen
-		mappedUser["createdDate"] = v.CreatedDate
-
-		mappedUsers[v.ObjectId.String()] = mappedUser
 	}
 
 	roomModel := models.RoomModel{
@@ -170,9 +110,8 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 	}
 
 	actionRoomPayload := &SetActiveRoomPayload{
-		Room:     roomModel,
-		Messages: roomMessages,
-		Users:    mappedUsers,
+		Room:  roomModel,
+		Users: participantsProfile,
 	}
 
 	activeRoomAction := Action{
@@ -180,6 +119,64 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 		Payload: actionRoomPayload,
 	}
 
-	go dispatchAction(activeRoomAction, userInfoReq)
+	if model.ResponseActionType != "" {
+		activeRoomAction.Type = model.ResponseActionType
+	}
+	go dispatchAction(activeRoomAction, getUserInfoReqFromCurrentUser(currentUser))
 	return c.JSON(roomModel)
+}
+
+// getParticipantsProfile
+func getParticipantsProfile(currentUser *types.UserContext, model *models.ActivePeerRoomModel) (map[string]interface{}, []string, error) {
+
+	mappedParticipants := make(map[string]interface{})
+
+	if model.PeerUserId == uuid.Nil && model.SocialName == "" {
+		return nil, nil, fmt.Errorf("PeerUserId is nil and SocialName is empty")
+	}
+
+	log.Info(fmt.Sprintf("PeerUserId is %s and SocialName is %s", model.PeerUserId, model.SocialName))
+	log.Info("CURRENT USER %v", currentUser)
+
+	receptionist := new(models.UserProfileModel)
+
+	var err error
+	if model.SocialName != "" {
+		receptionist, err = getProfileBySocialName(model.SocialName)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Get user profile by social name %s", err.Error())
+		}
+
+	} else {
+		receptionist, err = getUserProfileByID(model.PeerUserId)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Get user profile by ID %s", err.Error())
+		}
+	}
+
+	// Map receptionist user
+	mappedUser := make(map[string]interface{})
+	mappedUser["userId"] = receptionist.ObjectId
+	mappedUser["fullName"] = receptionist.FullName
+	mappedUser["socialName"] = receptionist.SocialName
+	mappedUser["avatar"] = receptionist.Avatar
+	mappedUser["banner"] = receptionist.Banner
+	mappedUser["tagLine"] = receptionist.TagLine
+	mappedUser["lastSeen"] = receptionist.LastSeen
+	mappedUser["createdDate"] = receptionist.CreatedDate
+	mappedParticipants[receptionist.ObjectId.String()] = mappedUser
+
+	// Map current user
+	mappedCurrentUser := make(map[string]interface{})
+	mappedCurrentUser["userId"] = currentUser.UserID
+	mappedCurrentUser["fullName"] = currentUser.DisplayName
+	mappedCurrentUser["socialName"] = currentUser.SocialName
+	mappedCurrentUser["avatar"] = currentUser.Avatar
+	mappedCurrentUser["tagLine"] = currentUser.TagLine
+	mappedCurrentUser["lastSeen"] = utils.UTCNowUnix()
+	mappedCurrentUser["createdDate"] = currentUser.CreatedDate
+	mappedParticipants[currentUser.UserID.String()] = mappedCurrentUser
+	roomMemberIds := []string{currentUser.UserID.String(), receptionist.ObjectId.String()}
+
+	return mappedParticipants, roomMemberIds, nil
 }

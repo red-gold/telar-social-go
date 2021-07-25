@@ -26,7 +26,7 @@ do
 echo -e "$BYellow"
 microPath="$DIR/micros/$i"
 echo "Updating [telar-core] module in $microPath"
-cd "$microPath" && go get github.com/red-gold/telar-core@v0.1.12 && go mod tidy
+cd "$microPath" && go get github.com/red-gold/telar-core@v0.1.16 && go mod tidy
 echo "[telar-core] module updated for $i"
 done
 echo -e "$Black"

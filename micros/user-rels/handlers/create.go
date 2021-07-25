@@ -82,6 +82,7 @@ func FollowHandle(c *fiber.Ctx) error {
 		Avatar:   model.RightUser.Avatar,
 	}
 
+	// Store the relation
 	if err := userRelService.FollowUser(leftUserMeta, rightUserMeta, model.CircleIds, []string{"status:follow"}); err != nil {
 		errorMessage := fmt.Sprintf("Save UserRel Error %s", err.Error())
 		log.Error(errorMessage)

@@ -10,7 +10,6 @@ import (
 	"github.com/red-gold/telar-core/pkg/log"
 	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
-	notificationsModels "github.com/red-gold/telar-web/micros/notifications/models"
 	"github.com/red-gold/ts-serverless/micros/votes/database"
 	domain "github.com/red-gold/ts-serverless/micros/votes/dto"
 	models "github.com/red-gold/ts-serverless/micros/votes/models"
@@ -22,6 +21,7 @@ type PostModelNotification struct {
 	OwnerUserId      uuid.UUID `json:"ownerUserId"`
 	OwnerDisplayName string    `json:"ownerDisplayName"`
 	OwnerAvatar      string    `json:"ownerAvatar"`
+	URLKey           string    `json:"urlKey"`
 }
 
 // CreateVoteHandle handle create a new vote
@@ -56,11 +56,21 @@ func CreateVoteHandle(c *fiber.Ctx) error {
 		OwnerAvatar:      currentUser.Avatar,
 		TypeId:           model.TypeId,
 	}
+	userInfoReq := getUserInfoReq(c)
 
-	if err := voteService.SaveVote(newVote); err != nil {
-		errorMessage := fmt.Sprintf("Save Vote Error %s", err.Error())
+	saveVoteChannel := voteService.SaveVote(newVote)
+	readPostChannel := readPostAsync(model.PostId, userInfoReq)
+
+	saveVoteResult, postResult := <-saveVoteChannel, <-readPostChannel
+	if saveVoteResult.Error != nil {
+		errorMessage := fmt.Sprintf("Save Vote Error %s", saveVoteResult.Error.Error())
 		log.Error(errorMessage)
 		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/saveVote", "Error happened while saving Vote!"))
+	}
+
+	if postResult.Error != nil {
+		messageError := fmt.Sprintf("Cannot get the post! error: %s", postResult.Error.Error())
+		fmt.Println(messageError)
 	}
 
 	// Create user headers for http request
@@ -72,28 +82,30 @@ func CreateVoteHandle(c *fiber.Ctx) error {
 	userHeaders["role"] = []string{currentUser.SystemRole}
 
 	go func() {
-		postURL := fmt.Sprintf("/posts/score/+1/%s", model.PostId)
-		_, postErr := functionCall(http.MethodPut, []byte(""), postURL, userHeaders)
+		fullURL := "/posts/score"
+		payload, err := json.Marshal(fiber.Map{
+			"postId": model.PostId,
+			"count":  1,
+		})
+		if err != nil {
+			messageError := fmt.Sprintf("Can not parse score payload: %s", err.Error())
+			log.Error(messageError)
+		}
 
-		if postErr != nil {
-			messageError := fmt.Sprintf("Cannot save vote on post! error: %s", postErr.Error())
-			fmt.Println(messageError)
+		_, functionErr := functionCall(http.MethodPut, payload, fullURL, userHeaders)
+
+		if functionErr != nil {
+			messageError := fmt.Sprintf("Cannot save vote on post! error: %s", functionErr.Error())
+			log.Error(messageError)
 		}
 
 	}()
 
 	// Create notification request
 	go func(currentUser types.UserContext) {
-		postURL := fmt.Sprintf("/posts/%s", model.PostId)
-		postBody, postErr := functionCall(http.MethodGet, []byte(""), postURL, userHeaders)
-
-		if postErr != nil {
-			messageError := fmt.Sprintf("Cannot get the post! error: %s", postErr.Error())
-			fmt.Println(messageError)
-		}
 
 		var post PostModelNotification
-		marshalErr := json.Unmarshal(postBody, &post)
+		marshalErr := json.Unmarshal(postResult.Result, &post)
 		if marshalErr != nil {
 			messageError := fmt.Sprintf("Cannot unmarshal the post! error: %s", marshalErr.Error())
 			fmt.Println(messageError)
@@ -104,11 +116,12 @@ func CreateVoteHandle(c *fiber.Ctx) error {
 			return
 		}
 
-		URL := fmt.Sprintf("/%s/posts/%s", currentUser.UserID, model.PostId)
-		notificationModel := &notificationsModels.CreateNotificationModel{
+		URL := fmt.Sprintf("/posts/%s", post.URLKey)
+		notificationModel := &models.NotificationModel{
 			OwnerUserId:          currentUser.UserID,
 			OwnerDisplayName:     currentUser.DisplayName,
 			OwnerAvatar:          currentUser.Avatar,
+			Title:                currentUser.DisplayName,
 			Description:          fmt.Sprintf("%s like your post.", currentUser.DisplayName),
 			URL:                  URL,
 			NotifyRecieverUserId: post.OwnerUserId,
