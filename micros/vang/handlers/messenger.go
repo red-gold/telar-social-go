@@ -80,6 +80,7 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 			ReadDate:      readDateMap,
 			ReadCount:     readCountMap,
 			ReadMessageId: readMessageIdMap,
+			DeactiveUsers: []string{roomMemberIds[1]},
 			LastMessage:   lastMessageMap,
 			MemberCount:   2,
 			MessageCount:  0,
@@ -102,6 +103,7 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 		ReadDate:      room.ReadDate,
 		ReadCount:     room.ReadCount,
 		ReadMessageId: room.ReadMessageId,
+		DeactiveUsers: room.DeactiveUsers,
 		LastMessage:   room.LastMessage,
 		MemberCount:   room.MemberCount,
 		MessageCount:  room.MessageCount,
@@ -122,7 +124,7 @@ func ActivePeerRoom(c *fiber.Ctx) error {
 	if model.ResponseActionType != "" {
 		activeRoomAction.Type = model.ResponseActionType
 	}
-	go dispatchAction(activeRoomAction, getUserInfoReqFromCurrentUser(currentUser))
+	go dispatchAction(activeRoomAction, currentUser.UserID, getUserInfoReqFromCurrentUser(currentUser))
 	return c.JSON(roomModel)
 }
 

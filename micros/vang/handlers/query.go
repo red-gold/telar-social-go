@@ -61,6 +61,44 @@ func QueryMessagesHandle(c *fiber.Ctx) error {
 	return c.JSON(vangList)
 }
 
+// GetActiveRoomHandle handle get an active room
+func GetActiveRoomHandle(c *fiber.Ctx) error {
+
+	roomId := c.Params("roomId")
+	if roomId == "" {
+		errorMessage := fmt.Sprintf("Room id can not be empty.")
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("roomIdIsRequired", errorMessage))
+	}
+	roomUUID, err := uuid.FromString(roomId)
+	if err != nil {
+		log.Error("[GetActiveRoomHandle] %s", err.Error())
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("roomIdIsInvalid", "Room id is invalid"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+	if !ok {
+		log.Error("[QueryMessagesHandle] Can not get current user")
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser",
+			"Can not get current user"))
+	}
+
+	// Create service
+	roomService, serviceErr := service.NewRoomService(database.Db)
+	if serviceErr != nil {
+		log.Error("NewRoomService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/roomService", "Error happened while creating roomService!"))
+	}
+
+	room, findRoomErr := roomService.GetActiveRoom(roomUUID, []string{currentUser.UserID.String()})
+	if findRoomErr != nil {
+		log.Error("[GetUserRooms.roomService.GetRoomsByUserId] %s", findRoomErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/findRoom", "Error happened while finding room!"))
+	}
+
+	return c.JSON(room)
+}
+
 // GetUserRooms handle active peer room
 func GetUserRooms(c *fiber.Ctx) error {
 
@@ -86,7 +124,7 @@ func GetUserRooms(c *fiber.Ctx) error {
 	}
 
 	if len(rooms) == 0 {
-		c.JSON(fiber.Map{
+		return c.JSON(fiber.Map{
 			"rooms":   fiber.Map{},
 			"roomIds": []string{},
 		})
@@ -108,7 +146,8 @@ func GetUserRooms(c *fiber.Ctx) error {
 		mappedRoom["type"] = v.Type
 		mappedRoom["readDate"] = v.ReadDate
 		mappedRoom["readCount"] = v.ReadCount
-		mappedRoom["ReadMessageId"] = v.ReadMessageId
+		mappedRoom["readMessageId"] = v.ReadMessageId
+		mappedRoom["deactiveUsers"] = v.DeactiveUsers
 		mappedRoom["lastMessage"] = v.LastMessage
 		mappedRoom["memberCount"] = v.MemberCount
 		mappedRoom["messageCount"] = v.MessageCount

@@ -189,22 +189,24 @@ func (s RoomServiceImpl) CreateRoomIndex(indexes map[string]interface{}) error {
 	return result
 }
 
-// GetRoomByRoomId get all room by room ID
-func (s RoomServiceImpl) GetRoomByRoomId(roomId *uuid.UUID, sortBy string, page int64) ([]dto.Room, error) {
-	sortMap := make(map[string]int)
-	sortMap[sortBy] = -1
-	skip := numberOfItems * (page - 1)
-	limit := numberOfItems
+// GetPeerRoom get all room by room ID
+func (s RoomServiceImpl) GetPeerRoom(roomId uuid.UUID, members []string, deactivePeerId uuid.UUID) (*dto.Room, error) {
+
+	// filters
+	include := make(map[string]interface{})
+	include["$in"] = members
 
 	filter := make(map[string]interface{})
+	filter["members"] = include
+	filter["objectId"] = roomId
 
-	if roomId != nil {
-		filter["roomId"] = *roomId
+	if deactivePeerId != uuid.Nil {
+		inDeactiveUsers := make(map[string]interface{})
+		inDeactiveUsers["$in"] = []string{deactivePeerId.String()}
+		filter["deactiveUsers"] = inDeactiveUsers
 	}
 
-	result, err := s.FindRoomList(filter, limit, skip, sortMap)
-
-	return result, err
+	return s.FindOneRoom(filter)
 }
 
 // DeleteRoomByRoomId delete room by room id
@@ -241,12 +243,17 @@ func (s RoomServiceImpl) FindOneRoomByMembers(userIds []string, roomType int8) (
 func (s RoomServiceImpl) GetRoomsByUserId(userId string, roomType int8) ([]dto.Room, error) {
 	sortMap := make(map[string]int)
 	sortMap["updatedDate"] = -1
+
 	include := make(map[string]interface{})
 	include["$in"] = []string{userId}
+
+	nin := make(map[string]interface{})
+	nin["$nin"] = []string{userId}
 
 	filter := make(map[string]interface{})
 	filter["members"] = include
 	filter["type"] = roomType
+	filter["deactiveUsers"] = nin
 
 	return s.FindRoomList(filter, 0, 0, sortMap)
 }
@@ -308,4 +315,77 @@ func (s RoomServiceImpl) UpdateMemberRead(roomId uuid.UUID, userId uuid.UUID, am
 	options := &coreData.UpdateOptions{}
 	options.SetUpsert(true)
 	return s.UpdateRoom(filter, data, options)
+}
+
+// DeactiveUserRoom set user delete a room
+func (s RoomServiceImpl) DeactiveUserRoom(roomId uuid.UUID, userId uuid.UUID) error {
+
+	// date to update
+	push := make(map[string]interface{})
+	push["deactiveUsers"] = userId.String()
+
+	data := make(map[string]interface{})
+	data["$push"] = push
+
+	// filters
+	include := make(map[string]interface{})
+	include["$in"] = []string{userId.String()}
+
+	nin := make(map[string]interface{})
+	nin["$nin"] = []string{userId.String()}
+
+	filter := make(map[string]interface{})
+	filter["members"] = include
+	filter["objectId"] = roomId
+	filter["deactiveUsers"] = nin
+
+	options := &coreData.UpdateOptions{}
+	options.SetUpsert(true)
+	return s.UpdateRoom(filter, data, options)
+}
+
+// ActiveAllPeerRoom active all peer room members
+func (s RoomServiceImpl) ActiveAllPeerRoom(roomId uuid.UUID, members []string, deactivePeerId uuid.UUID) error {
+
+	setData := make(map[string]interface{})
+	setData["deactiveUsers"] = []string{}
+
+	data := make(map[string]interface{})
+	data["$set"] = setData
+
+	// filters
+	include := make(map[string]interface{})
+	include["$in"] = members
+
+	filter := make(map[string]interface{})
+	filter["members"] = include
+	filter["objectId"] = roomId
+
+	if deactivePeerId != uuid.Nil {
+		inDeactiveUsers := make(map[string]interface{})
+		inDeactiveUsers["$in"] = []string{deactivePeerId.String()}
+		filter["deactiveUsers"] = inDeactiveUsers
+	}
+
+	options := &coreData.UpdateOptions{}
+	options.SetUpsert(true)
+	return s.UpdateRoom(filter, data, options)
+}
+
+// GetActiveRoom active all peer room members
+func (s RoomServiceImpl) GetActiveRoom(roomId uuid.UUID, members []string) (*dto.Room, error) {
+
+	size := make(map[string]interface{})
+	size["$size"] = 0
+
+	// filters
+	include := make(map[string]interface{})
+	include["$in"] = members
+
+	filter := make(map[string]interface{})
+	filter["members"] = include
+	filter["objectId"] = roomId
+	filter["deactiveUsers"] = size
+
+	return s.FindOneRoom(filter)
 }

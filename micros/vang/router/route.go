@@ -56,9 +56,11 @@ func SetupRoutes(app *fiber.App) {
 	app.Post("/messages", append(hmacCookieHandlers, handlers.SaveMessages)...)
 	app.Post("/message/query", append(hmacCookieHandlers, handlers.QueryMessagesHandle)...)
 	app.Put("/message", append(hmacCookieHandlers, handlers.UpdateMessageHandle)...)
+	app.Put("/room/deactive/:roomId", authCookieMiddleware(false), handlers.DeactiveUserRoomHandle)
 	app.Delete("/message/:messageId", append(hmacCookieHandlers, handlers.DeleteMessageHandle)...)
 	app.Post("/room/active", append(hmacCookieHandlers, handlers.ActivePeerRoom)...)
 
+	app.Get("/active-room/:roomId", append(hmacCookieHandlers, handlers.GetActiveRoomHandle)...)
 	app.Post("/rooms", authHMACMiddleware(false), handlers.GetUserRooms)
 	app.Put("/read", authHMACMiddleware(false), handlers.UpdateReadMessageHandle)
 }

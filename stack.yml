@@ -2,16 +2,16 @@ functions:
   circles:
     lang: golang-middleware
     handler: ./micros/circles
-    image: qolzam/circles:v0.2.4
+    image: qolzam/circles:v0.2.5
     fprocess: ""
     environment: {}
     secrets:
-    - secrets
+      - secrets
     environment_file:
-    - config/app_config.yml
-    - config/circle_config.yml
-    - config/server_web_config.yml
-    - config/gateway_config.yml
+      - config/app_config.yml
+      - config/circle_config.yml
+      - config/server_web_config.yml
+      - config/gateway_config.yml
     labels:
       com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
@@ -23,16 +23,16 @@ functions:
   comments:
     lang: golang-middleware
     handler: ./micros/comments
-    image: qolzam/comments:v0.2.4
+    image: qolzam/comments:v0.2.5
     fprocess: ""
     environment: {}
     secrets:
-    - secrets
+      - secrets
     environment_file:
-    - config/app_config.yml
-    - config/comment_config.yml
-    - config/server_web_config.yml
-    - config/gateway_config.yml
+      - config/app_config.yml
+      - config/comment_config.yml
+      - config/server_web_config.yml
+      - config/gateway_config.yml
     labels:
       com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
@@ -44,16 +44,16 @@ functions:
   media:
     lang: golang-middleware
     handler: ./micros/gallery
-    image: qolzam/media:v0.2.4
+    image: qolzam/media:v0.2.5
     fprocess: ""
     environment: {}
     secrets:
-    - secrets
+      - secrets
     environment_file:
-    - config/app_config.yml
-    - config/media_config.yml
-    - config/server_web_config.yml
-    - config/gateway_config.yml
+      - config/app_config.yml
+      - config/media_config.yml
+      - config/server_web_config.yml
+      - config/gateway_config.yml
     labels:
       com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
@@ -65,16 +65,16 @@ functions:
   posts:
     lang: golang-middleware
     handler: ./micros/posts
-    image: qolzam/posts:v0.2.4
+    image: qolzam/posts:v0.2.5
     fprocess: ""
     environment: {}
     secrets:
-    - secrets
+      - secrets
     environment_file:
-    - config/app_config.yml
-    - config/post_config.yml
-    - config/server_web_config.yml
-    - config/gateway_config.yml
+      - config/app_config.yml
+      - config/post_config.yml
+      - config/server_web_config.yml
+      - config/gateway_config.yml
     labels:
       com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
@@ -86,16 +86,16 @@ functions:
   user-rels:
     lang: golang-middleware
     handler: ./micros/user-rels
-    image: qolzam/user-rels:v0.2.4
+    image: qolzam/user-rels:v0.2.5
     fprocess: ""
     environment: {}
     secrets:
-    - secrets
+      - secrets
     environment_file:
-    - config/app_config.yml
-    - config/user_rel_config.yml
-    - config/server_web_config.yml
-    - config/gateway_config.yml
+      - config/app_config.yml
+      - config/user_rel_config.yml
+      - config/server_web_config.yml
+      - config/gateway_config.yml
     labels:
       com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
@@ -107,16 +107,16 @@ functions:
   votes:
     lang: golang-middleware
     handler: ./micros/votes
-    image: qolzam/votes:v0.2.4
+    image: qolzam/votes:v0.2.5
     fprocess: ""
     environment: {}
     secrets:
-    - secrets
+      - secrets
     environment_file:
-    - config/app_config.yml
-    - config/vote_config.yml
-    - config/server_web_config.yml
-    - config/gateway_config.yml
+      - config/app_config.yml
+      - config/vote_config.yml
+      - config/server_web_config.yml
+      - config/gateway_config.yml
     labels:
       com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"
@@ -128,16 +128,16 @@ functions:
   vang:
     lang: golang-middleware
     handler: ./micros/vang
-    image: qolzam/vang:v0.2.4
+    image: qolzam/vang:v0.2.5
     fprocess: ""
     environment: {}
     secrets:
-    - secrets
+      - secrets
     environment_file:
-    - config/app_config.yml
-    - config/vang_config.yml
-    - config/server_web_config.yml
-    - config/gateway_config.yml
+      - config/app_config.yml
+      - config/vang_config.yml
+      - config/server_web_config.yml
+      - config/gateway_config.yml
     labels:
       com.openfaas.scale.zero: "false"
       openfaas-cloud: "1"

@@ -18,10 +18,13 @@ type RoomService interface {
 	DeleteRoomByOwner(ownerUserId uuid.UUID, vangId uuid.UUID) error
 	DeleteManyRoom(filter interface{}) error
 	CreateRoomIndex(indexes map[string]interface{}) error
-	GetRoomByRoomId(roomId *uuid.UUID, sortBy string, page int64) ([]dto.Room, error)
+	GetPeerRoom(roomId uuid.UUID, members []string, DeactivePeerId uuid.UUID) (*dto.Room, error)
 	DeleteRoomByRoomId(ownerUserId uuid.UUID, roomId uuid.UUID) error
 	FindOneRoomByMembers(userIds []string, roomType int8) (*dto.Room, error)
 	GetRoomsByUserId(userId string, roomType int8) ([]dto.Room, error)
 	UpdateMessageMeta(roomId uuid.UUID, amount, createdDate int64, text, ownerId string) error
 	UpdateMemberRead(roomId uuid.UUID, userId uuid.UUID, amount, messageCreatedDate int64) error
+	DeactiveUserRoom(roomId uuid.UUID, userId uuid.UUID) error
+	ActiveAllPeerRoom(roomId uuid.UUID, members []string, deactivePeerId uuid.UUID) error
+	GetActiveRoom(roomId uuid.UUID, members []string) (*dto.Room, error)
 }

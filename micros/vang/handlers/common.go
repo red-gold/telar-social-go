@@ -112,9 +112,9 @@ func functionCall(method string, bytesReq []byte, url string, header map[string]
 }
 
 // Dispatch action
-func dispatchAction(action Action, userInfoInReq *UserInfoInReq) {
+func dispatchAction(action Action, roomId uuid.UUID, userInfoInReq *UserInfoInReq) {
 
-	actionURL := fmt.Sprintf("/actions/dispatch/%s", userInfoInReq.UserId.String())
+	actionURL := fmt.Sprintf("/actions/dispatch/%s", roomId.String())
 
 	actionBytes, marshalErr := json.Marshal(action)
 	if marshalErr != nil {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofrs/uuid"
 	"github.com/red-gold/telar-core/pkg/log"
 	"github.com/red-gold/telar-core/types"
 	"github.com/red-gold/telar-core/utils"
@@ -85,6 +86,45 @@ func UpdateReadMessageHandle(c *fiber.Ctx) error {
 		errorMessage := fmt.Sprintf("Update Message Error %s", err.Error())
 		log.Error(errorMessage)
 		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/updateMessage", "Error happened while updating message!"))
+	}
+
+	return c.SendStatus(http.StatusOK)
+}
+
+// DeactiveUserRoomHandle handl deactive room for a user
+func DeactiveUserRoomHandle(c *fiber.Ctx) error {
+
+	roomId := c.Params("roomId")
+
+	if roomId == "" {
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("roomIdIsRequired",
+			"Room ID is required!"))
+	}
+
+	roomUUID, uuidErr := uuid.FromString(roomId)
+	if uuidErr != nil {
+		errorMessage := fmt.Sprintf("Parse room UUID Error %s", uuidErr.Error())
+		log.Error(errorMessage)
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidRoomId", "Invalid roomId!"))
+	}
+
+	roomService, serviceErr := service.NewRoomService(database.Db)
+
+	if serviceErr != nil {
+		log.Error("NewRoomService %s", serviceErr.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/roomService", "Error happened while creating roomService!"))
+	}
+
+	currentUser, ok := c.Locals(types.UserCtxName).(types.UserContext)
+
+	if !ok {
+		log.Error("[DeactiveUserRoomHandle] Can not get current user")
+
+		return c.Status(http.StatusBadRequest).JSON(utils.Error("invalidCurrentUser", "Can not get current user!"))
+	}
+	if err := roomService.DeactiveUserRoom(roomUUID, currentUser.UserID); err != nil {
+		log.Error("[DeactiveUserRoomHandle] %s", err.Error())
+		return c.Status(http.StatusInternalServerError).JSON(utils.Error("internal/deactiveUserRoom", "Error happened while deactivating user room!"))
 	}
 
 	return c.SendStatus(http.StatusOK)
