@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://telar.press/" rel="noopener" target="_blank"><img width="150" src="https://raw.githubusercontent.com/red-gold/red-gold-web/master/website/static/img/logos/telar-social-logo/profile.png" alt="Material-UI logo"></a></p>
+  <a href="https://telar.dec/" rel="noopener" target="_blank"><img width="150" src="https://raw.githubusercontent.com/red-gold/red-gold-web/master/website/static/img/logos/telar-social-logo/profile.png" alt="Material-UI logo"></a></p>
 </p>
 
 <h1 align="center">Telar Social Serverless</h1>
@@ -12,7 +12,7 @@
 <br>⚠️ ***DO NOT USE IN ANY PRODUCTION ENVIRONMENT!!!*** ⚠️
 
 ## Demo
-https://red-gold.o6s.io/auth/login
+[Telar Social](https://social.telar.dev)
 
 ### Video Tutorial
 - [![Telar Social one-click setup: OpenFaaS Cloud Community Cluster](https://img.youtube.com/vi/M-vjKGIvzWM/0.jpg)](https://www.youtube.com/watch?v=M-vjKGIvzWM)
@@ -61,7 +61,7 @@ Need help, [join our community](https://docs.google.com/forms/d/e/1FAIpQLSdkwt5p
 
 ## Documentation
 
-Check out our [documentation website](https://red-gold.tech/docs/en/social/get_started/).
+Check [Telar docs](https://telar.dev)
 
 ## License
 
