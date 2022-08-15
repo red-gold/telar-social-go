@@ -29,32 +29,6 @@ Our top backers [Become a backer](https://www.patreon.com/qolzam)
 ## Sponsors 🥉🥈🥇
 Our top sponsors [Become a sponsor](https://www.patreon.com/qolzam)
 
-#### Features Migrated:
-- [x] Register User
-- [x] Login
-- [x] Reset Password
-- [x] Following User & Circles
-- [x] Read Posts
-- [x] Search Post
-- [x] Search User
-- [ ] Search Tag
-- [x] Setting
-- [x] Notification
-- [ ] Feedback
-- [ ] Admin User Managemnet
-- [x] OAuth
-- [x] Like Posts
-- [x] Chat
-- [ ] Album
-- [x] Video
-- [x] Sharing Post
-- [x] Comments
-- [ ] Post Permission
-
-### TODO
-- [ ] Unit test
-- [ ] Optimization and Performance
-
 ## Community
 
 Need help, [join our community](https://docs.google.com/forms/d/e/1FAIpQLSdkwt5pxmyCZQO0AmyAghBOdA-XBG298Pfm5Dw1xjNGaGeCYQ/viewform).
