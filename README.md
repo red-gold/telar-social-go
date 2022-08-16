@@ -5,7 +5,7 @@
 <h1 align="center">Telar Social (Go version)</h1>
 
 <div align="center">
- Telar Social Network is an open source social network written in Go. A modern cloud native social network. Telar makes it simple to run your own social network running on any public or private cloud. 
+Telar Social Engine is a scalable cloud native social network. Whatever your creative idea or unique bussiness model, you can build it by Telar running on any public or private cloud.
 </div>
 
 > 🚧 ***IT IS UNDER ACTIVE DEVELOPMENT, current version is unstable and maybe change at any time until release of v1.0.0.***
